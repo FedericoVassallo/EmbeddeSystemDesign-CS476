@@ -16,10 +16,10 @@ int main () {
   camParams = initOv7670(VGA);
   printf("Done!\n" );
   printf("NrOfPixels : %d\n", camParams.nrOfPixelsPerLine );
-  result = (camParams.nrOfPixelsPerLine <= 320) ? camParams.nrOfPixelsPerLine | 0X50000000 : camParams.nrOfPixelsPerLine;
+  result = (camParams.nrOfPixelsPerLine <= 320) ? camParams.nrOfPixelsPerLine | 0x80000000 : camParams.nrOfPixelsPerLine;
   vga[0] = swap_u32(result);
   printf("NrOfLines  : %d\n", camParams.nrOfLinesPerImage );
-  result =  (camParams.nrOfLinesPerImage <= 240) ? camParams.nrOfLinesPerImage | 0X50000000 : camParams.nrOfLinesPerImage;
+  result =  (camParams.nrOfLinesPerImage <= 240) ? camParams.nrOfLinesPerImage | 0x80000000 : camParams.nrOfLinesPerImage;
   vga[1] = swap_u32(result);
   printf("PCLK (kHz) : %d\n", camParams.pixelClockInkHz );
   printf("FPS        : %d\n", camParams.framesPerSecond );
@@ -29,11 +29,22 @@ int main () {
   vga[3] = swap_u32((uint32_t) &grayscale[0]);
   while(1) {
     uint32_t * gray = (uint32_t *) &grayscale[0];
-    takeSingleImageBlocking((uint32_t) &rgb565[0]); //block the image that is going to be processed until it is ready
+    takeSingleImageBlocking((uint32_t) &rgb565[0]);
 
-    uint32_t control = 0x0707; //At the same time, reset counters 0,1,2 and enable them (3 is skipped because it is the same as 0)
-    asm volatile ("l.nios_rrr r0, r0, %[in2], 0X5"::[in2]"r"(control));
-    
+    // we delare everything before staring the counters
+    uint32_t count_reset = 0x700;
+    uint32_t count_enable = 0x7;
+     // Control = 0x70 disables counter0,1,2 (bits 4,5,6) while reading in the same instruction
+    uint32_t control = 0x70;
+    uint32_t cid0 = 0, cid1 = 1, cid2 = 2;
+    uint32_t execCycles = 0, stallCycles = 0, busIdleCycles = 0;
+
+    // First thing we rest the counters
+    asm volatile ("l.nios_rrr r0,r0,%[in2],0x5" :: [in2]"r"(count_reset));
+
+    // Then we enagle the counters
+    asm volatile ("l.nios_rrr r0,r0,%[in2],0x5" :: [in2]"r"(count_enable));
+
     for (int line = 0; line < camParams.nrOfLinesPerImage; line++) {
       for (int pixel = 0; pixel < camParams.nrOfPixelsPerLine; pixel++) {
         uint16_t rgb = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel]);
@@ -45,33 +56,15 @@ int main () {
       }
     }
 
-    uint32_t execCycles, stallCycles, busIdleCycles;
-    control = 7 << 4;
-    uint32_t counterId = 0;
-
-    asm volatile ("l.nios_rrr %[out1], %[in1], %[in2], 0X5":
-                  [out1]"=r"(execCycles):
-                  [in1]"r"(counterId),
-                  [in2]"r"(control));
-    
-    printf("execCycles=%d\n", execCycles);
-    
-    counterId = 1;
-
-    asm volatile ("l.nios_rrr %[out1], %[in1], %[in2], 0X5":
-                  [out1]"=r"(stallCycles):
-                  [in1]"r"(counterId),
-                  [in2]"r"(control));
-
-    printf("stallCycles=%d\n", stallCycles);
-    counterId = 2;
-    
-    asm volatile ("l.nios_rrr %[out1], %[in1], %[in2], 0X5":
-                  [out1]"=r"(busIdleCycles):
-                  [in1]"r"(counterId),
-                  [in2]"r"(control));
-    
-    printf("busIdleCycles=%d\n", busIdleCycles);
-    
+   
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0x5" : [out1]"=r"(cycles) : [in1]"r"(cid0), [in2]"r"(control));
+    // Read the stall cycles from counter1 and disable it
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0x5" : [out1]"=r"(stall)  : [in1]"r"(cid1), [in2]"r"(control));
+    // Read the bus idle cycles from counter2 and disable it
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0x5" : [out1]"=r"(idle)   : [in1]"r"(cid2), [in2]"r"(control));
+    // Print the results
+    printf("Cycles    : %d\n", cycles);
+    printf("Stall     : %d\n", stall);
+    printf("Bus-idle  : %d\n", idle);
   }
 }
