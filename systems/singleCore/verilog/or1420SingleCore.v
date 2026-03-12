@@ -380,7 +380,7 @@ module or1420SingleCore ( input wire         clock12MHz,
   wire        s_profileCiDone;
   wire [31:0] s_profileCiResult;
 
-  profileCi #( .customId(8'h05) ) profiling_module (
+  profileCi #( .customId(8'h0B) ) profiling_module (
       .start(s_cpu1CiStart),      
       .clock(s_systemClock),      
       .reset(s_cpuReset),         

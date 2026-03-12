@@ -8,7 +8,7 @@ int main () {
   volatile uint16_t rgb565[640*480];
   volatile uint8_t grayscale[640*480];
   volatile uint32_t result, cycles,stall,idle;
-  volatile unsigned int *vga = (unsigned int *) 0X50000020;
+  volatile unsigned int *vga = (unsigned int *) 0xB0000020;
   camParameters camParams;
   vga_clear();
   
@@ -40,10 +40,10 @@ int main () {
     uint32_t execCycles = 0, stallCycles = 0, busIdleCycles = 0;
 
     // First thing we rest the counters
-    asm volatile ("l.nios_rrr r0,r0,%[in2],0x5" :: [in2]"r"(count_reset));
+    asm volatile ("l.nios_rrr r0,r0,%[in2],0xB" :: [in2]"r"(count_reset));
 
     // Then we enagle the counters
-    asm volatile ("l.nios_rrr r0,r0,%[in2],0x5" :: [in2]"r"(count_enable));
+    asm volatile ("l.nios_rrr r0,r0,%[in2],0xB" :: [in2]"r"(count_enable));
 
     for (int line = 0; line < camParams.nrOfLinesPerImage; line++) {
       for (int pixel = 0; pixel < camParams.nrOfPixelsPerLine; pixel++) {
@@ -57,14 +57,14 @@ int main () {
     }
 
    
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0x5" : [out1]"=r"(cycles) : [in1]"r"(cid0), [in2]"r"(control));
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB" : [out1]"=r"(cycles) : [in1]"r"(cid0), [in2]"r"(control));
     // Read the stall cycles from counter1 and disable it
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0x5" : [out1]"=r"(stall)  : [in1]"r"(cid1), [in2]"r"(control));
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB" : [out1]"=r"(stall)  : [in1]"r"(cid1), [in2]"r"(control));
     // Read the bus idle cycles from counter2 and disable it
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0x5" : [out1]"=r"(idle)   : [in1]"r"(cid2), [in2]"r"(control));
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB" : [out1]"=r"(idle)   : [in1]"r"(cid2), [in2]"r"(control));
     // Print the results
-    printf("Cycles    : %d\n", cycles);
-    printf("Stall     : %d\n", stall);
-    printf("Bus-idle  : %d\n", idle);
+    printf("Cycles    : %u\n", cycles);
+    printf("Stall     : %u\n", stall);
+    printf("Bus-idle  : %u\n", idle);
   }
 }
