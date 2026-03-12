@@ -56,7 +56,7 @@ int main () {
       }
     }
 
-   
+    // Read the execution cycles from counter0 and disable it
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB" : [out1]"=r"(cycles) : [in1]"r"(cid0), [in2]"r"(control));
     // Read the stall cycles from counter1 and disable it
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB" : [out1]"=r"(stall)  : [in1]"r"(cid1), [in2]"r"(control));
