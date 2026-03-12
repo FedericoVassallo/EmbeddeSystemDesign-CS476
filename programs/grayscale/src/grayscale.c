@@ -8,6 +8,12 @@ int main () {
   volatile uint16_t rgb565[640*480];
   volatile uint8_t grayscale[640*480];
   volatile uint32_t result, cycles,stall,idle;
+  // we delare everything before staring the counters
+  uint32_t count_reset = 0x700;
+  uint32_t count_enable = 0x7;
+  // Control = 0x70 disables counter0,1,2 (bits 4,5,6) while reading in the same instruction
+  uint32_t control = 0x70;
+  uint32_t cid0 = 0, cid1 = 1, cid2 = 2;
   volatile unsigned int *vga = (unsigned int *) 0xB0000020;
   camParameters camParams;
   vga_clear();
@@ -30,15 +36,7 @@ int main () {
   while(1) {
     uint32_t * gray = (uint32_t *) &grayscale[0];
     takeSingleImageBlocking((uint32_t) &rgb565[0]);
-
-    // we delare everything before staring the counters
-    uint32_t count_reset = 0x700;
-    uint32_t count_enable = 0x7;
-     // Control = 0x70 disables counter0,1,2 (bits 4,5,6) while reading in the same instruction
-    uint32_t control = 0x70;
-    uint32_t cid0 = 0, cid1 = 1, cid2 = 2;
-    uint32_t execCycles = 0, stallCycles = 0, busIdleCycles = 0;
-
+    
     // First thing we rest the counters
     asm volatile ("l.nios_rrr r0,r0,%[in2],0xB" :: [in2]"r"(count_reset));
 
@@ -56,13 +54,13 @@ int main () {
       }
     }
 
-    // Read the execution cycles from counter0 and disable it
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB" : [out1]"=r"(cycles) : [in1]"r"(cid0), [in2]"r"(control));
     // Read the stall cycles from counter1 and disable it
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB" : [out1]"=r"(stall)  : [in1]"r"(cid1), [in2]"r"(control));
     // Read the bus idle cycles from counter2 and disable it
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB" : [out1]"=r"(idle)   : [in1]"r"(cid2), [in2]"r"(control));
-    // Print the result 
+    // Print the results 
+
     printf("Cycles    : %u\n", cycles);
     printf("Stall     : %u\n", stall);
     printf("Bus-idle  : %u\n", idle);
