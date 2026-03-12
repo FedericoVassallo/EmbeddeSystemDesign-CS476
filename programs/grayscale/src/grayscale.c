@@ -42,7 +42,7 @@ int main () {
     // First thing we rest the counters
     asm volatile ("l.nios_rrr r0,r0,%[in2],0xB" :: [in2]"r"(count_reset));
 
-    // Then we enagle the counters
+    // Then we enable the counters
     asm volatile ("l.nios_rrr r0,r0,%[in2],0xB" :: [in2]"r"(count_enable));
 
     for (int line = 0; line < camParams.nrOfLinesPerImage; line++) {
@@ -62,7 +62,7 @@ int main () {
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB" : [out1]"=r"(stall)  : [in1]"r"(cid1), [in2]"r"(control));
     // Read the bus idle cycles from counter2 and disable it
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB" : [out1]"=r"(idle)   : [in1]"r"(cid2), [in2]"r"(control));
-    // Print the results
+    // Print the results 
     printf("Cycles    : %u\n", cycles);
     printf("Stall     : %u\n", stall);
     printf("Bus-idle  : %u\n", idle);
