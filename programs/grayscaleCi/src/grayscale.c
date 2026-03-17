@@ -23,6 +23,7 @@ int main () {
   vga[1] = swap_u32(result);
   printf("PCLK (kHz) : %d\n", camParams.pixelClockInkHz );
   printf("FPS        : %d\n", camParams.framesPerSecond );
+  printf("Test\n" );
   uint32_t * rgb = (uint32_t *) &rgb565[0];
   uint32_t grayPixels;
   vga[2] = swap_u32(2);
@@ -34,11 +35,10 @@ int main () {
     for (int line = 0; line < camParams.nrOfLinesPerImage; line++) {
       for (int pixel = 0; pixel < camParams.nrOfPixelsPerLine; pixel++) {
         uint16_t rgb = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel]);
-        uint32_t red1 = ((rgb >> 11) & 0x1F) << 3;
-        uint32_t green1 = ((rgb >> 5) & 0x3F) << 2;
-        uint32_t blue1 = (rgb & 0x1F) << 3;
-        uint32_t gray = ((red1*54+green1*183+blue1*19) >> 8)&0xFF;
-        grayscale[line*camParams.nrOfPixelsPerLine+pixel] = gray;
+        // We put the custom instruction for grayscale conversion here, passing the RGB565 pixel as input and getting the grayscale value as output
+        // The custom instruction ID is 12, so 0xC 
+        asm volatile ("l.nios_rrr %[out1],%[in1],r0,0xC":[out1]"=r"(gray):[in1]"r"((uint32_t)rgb));
+        grayscale[line*camParams.nrOfPixelsPerLine+pixel] = (uint8_t)(gray&&0xFF);
       }
     }
     asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
