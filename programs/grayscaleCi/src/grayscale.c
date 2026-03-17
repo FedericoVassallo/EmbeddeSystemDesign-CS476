@@ -35,10 +35,11 @@ int main () {
     for (int line = 0; line < camParams.nrOfLinesPerImage; line++) {
       for (int pixel = 0; pixel < camParams.nrOfPixelsPerLine; pixel++) {
         uint16_t rgb = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel]);
+        uint32_t gray_value;
         // We put the custom instruction for grayscale conversion here, passing the RGB565 pixel as input and getting the grayscale value as output
         // The custom instruction ID is 12, so 0xC 
-        asm volatile ("l.nios_rrr %[out1],%[in1],r0,0xC":[out1]"=r"(gray):[in1]"r"((uint32_t)rgb));
-        grayscale[line*camParams.nrOfPixelsPerLine+pixel] = (uint8_t)(gray&&0xFF);
+        asm volatile ("l.nios_rrr %[out1],%[in1],r0,0xC":[out1]"=r"(gray_value):[in1]"r"((uint32_t)rgb));
+        grayscale[line*camParams.nrOfPixelsPerLine+pixel] = (uint8_t)(gray_value & 0xFF);
       }
     }
     asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
