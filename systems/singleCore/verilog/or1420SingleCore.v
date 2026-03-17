@@ -48,15 +48,14 @@ module or1420SingleCore ( input wire         clock12MHz,
                            );
 
   wire        s_busIdle, s_snoopableBurst;
-  wire        s_hdmiDone, s_systemClock, s_systemClockX2, s_swapByteDone, s_flashDone, s_cpuFreqDone;
-  wire [31:0] s_hdmiResult, s_swapByteResult, s_flashResult, s_cpuFreqResult;
+  wire        s_hdmiDone, s_systemClock, s_systemClockX2, s_swapByteDone, s_flashDone, s_cpuFreqDone, s_grayscaleDone;
+  wire [31:0] s_hdmiResult, s_swapByteResult, s_flashResult, s_cpuFreqResult, s_grayscaleResult;
   wire [5:0]  s_memoryDistance = 6'd0;
   wire        s_busError, s_beginTransaction, s_endTransaction;
   wire [31:0] s_addressData;
   wire [3:0]  s_byteEnables;
   wire        s_readNotWrite, s_dataValid, s_busy;
   wire [7:0]  s_burstSize;
-  
   
   /*
    *
@@ -333,8 +332,8 @@ module or1420SingleCore ( input wire         clock12MHz,
   wire [7:0]  s_cpu1BurstSize;
   wire        s_spm1Irq, s_stall;
   
-  assign s_cpu1CiDone = s_hdmiDone | s_swapByteDone | s_flashDone | s_cpuFreqDone | s_i2cCiDone | s_delayCiDone | s_camCiDone | s_profileCiDone;
-  assign s_cpu1CiResult = s_hdmiResult | s_swapByteResult | s_flashResult | s_cpuFreqResult | s_i2cCiResult | s_camCiResult | s_delayResult | s_profileCiResult; 
+  assign s_cpu1CiDone = s_hdmiDone | s_swapByteDone | s_flashDone | s_cpuFreqDone | s_i2cCiDone | s_delayCiDone | s_camCiDone | s_profileCiDone | s_grayscaleDone;
+  assign s_cpu1CiResult = s_hdmiResult | s_swapByteResult | s_flashResult | s_cpuFreqResult | s_i2cCiResult | s_camCiResult | s_delayResult | s_profileCiResult | s_grayscaleResult; 
 
   or1420Top #( .NOP_INSTRUCTION(32'h1500FFFF)) cpu1
              (.cpuClock(s_systemClock),
@@ -392,6 +391,18 @@ module or1420SingleCore ( input wire         clock12MHz,
       .done(s_profileCiDone),
       .result(s_profileCiResult)
   );
+
+  /*
+  *
+  * Here we define the RGB565 to grayscale custom instruction
+  *
+  */
+  rgb565GrayscaleIse #(.customInstructionId(8'd12)) grayscale_ci
+    (.start  (s_cpu1CiStart),
+     .valueA (s_cpu1CiDataA),
+     .iseId  (s_cpu1CiN),
+     .done   (s_grayscaleDone),
+     .result (s_grayscaleResult));
 
   /*
    *
