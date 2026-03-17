@@ -14,7 +14,7 @@ int main () {
   // Control = 0x70 disables counter0,1,2 (bits 4,5,6) while reading in the same instruction
   uint32_t control = 0x70;
   uint32_t cid0 = 0, cid1 = 1, cid2 = 2;
-  volatile unsigned int *vga = (unsigned int *) 0xB0000020;
+  volatile unsigned int *vga = (unsigned int *) 0X50000020;
   camParameters camParams;
   vga_clear();
   
