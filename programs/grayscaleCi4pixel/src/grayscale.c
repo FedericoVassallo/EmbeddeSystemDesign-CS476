@@ -35,17 +35,22 @@ int main () {
     asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(7));
     for (int line = 0; line < camParams.nrOfLinesPerImage; line++) {
       for (int pixel = 0; pixel < camParams.nrOfPixelsPerLine; pixel += 4) {
-        int idx = line * camParams.nrOfPixelsPerLine + pixel;
-        uint32_t inA = *((uint32_t*)&rgb565[idx]);
-        uint32_t inB = *((uint32_t*)&rgb565[idx+2]);
+        // Read and swap each pixel
+        uint16_t sw0 = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel]);
+        uint16_t sw1 = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel+1]);
+        uint16_t sw2 = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel+2]);
+        //asm volatile ("l.nop"); // needed to avoid pipeline issue with 4 consecutive swap_u16 calls
+        uint16_t sw3 = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel+3]);
+        // Pack 2 swapped pixels into each 32-bit word
+        uint32_t inA = (uint32_t)sw0 | ((uint32_t)sw1 << 16);
+        uint32_t inB = (uint32_t)sw2 | ((uint32_t)sw3 << 16);
+        // Custom instruction converts 4 RGB565 pixels to 4 grayscale bytes in one cycle
         uint32_t gray4;
         asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xC"
                       :[out1]"=r"(gray4)
                       :[in1]"r"(inA),[in2]"r"(inB));
-        grayscale[idx]   =  gray4        & 0xFF;
-        grayscale[idx+1] = (gray4 >> 8)  & 0xFF;
-        grayscale[idx+2] = (gray4 >> 16) & 0xFF;
-        grayscale[idx+3] = (gray4 >> 24) & 0xFF;
+        // Write all 4 grayscale bytes at once
+        *((uint32_t*)&grayscale[line*camParams.nrOfPixelsPerLine+pixel]) = gray4;
       }
     }
     asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
