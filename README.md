@@ -33,4 +33,4 @@ The software is based on a makefile system. To build a program follow following 
 - If no error occurred, you will find in the directory ```programms/helloWorld/build-release/``` the files ```hello.elf```, ```hello.cmem```, and ```hello.mem```. The file that you need to upload to your board is the ```hello.cmem```-file.
 - Upload the ```hello.cmem```-file with your favorite terminal program to your virtual prototype.
 
-IMPORTANT: As the or1420 does not contain a hardware-divide unit you have to compile your programm with the compile option ```-msoft-div```!
+IMPORTANT: As the or1420 does not contain a hardware-divide unit you have to compile your programm with the compile option ```-msoft-div```
