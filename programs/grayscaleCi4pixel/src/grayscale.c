@@ -24,7 +24,7 @@ int main () {
   printf("PCLK (kHz) : %d\n", camParams.pixelClockInkHz );
   printf("FPS        : %d\n", camParams.framesPerSecond );
 
-  printf("Test11\n");
+  printf("Test15\n");
   uint32_t * rgb = (uint32_t *) &rgb565[0];
   uint32_t grayPixels;
   vga[2] = swap_u32(2);
@@ -39,7 +39,6 @@ int main () {
         uint16_t sw0 = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel]);
         uint16_t sw1 = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel+1]);
         uint16_t sw2 = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel+2]);
-        //asm volatile ("l.nop"); // needed to avoid pipeline issue with 4 consecutive swap_u16 calls
         uint16_t sw3 = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel+3]);
         // Pack 2 swapped pixels into each 32-bit word
         uint32_t inA = (uint32_t)sw0 | ((uint32_t)sw1 << 16);
@@ -49,8 +48,8 @@ int main () {
         asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xC"
                       :[out1]"=r"(gray4)
                       :[in1]"r"(inA),[in2]"r"(inB));
-        // Write all 4 grayscale bytes at once
-        *((uint32_t*)&grayscale[line*camParams.nrOfPixelsPerLine+pixel]) = gray4;
+        // Write all 4 grayscale bytes at once and we swap back for being coherent with the endianess
+        *((uint32_t*)&grayscale[line*camParams.nrOfPixelsPerLine+pixel]) = swap_u32(gray4);
       }
     }
     asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
