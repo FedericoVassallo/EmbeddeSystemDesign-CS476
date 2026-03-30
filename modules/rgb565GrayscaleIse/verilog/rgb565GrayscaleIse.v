@@ -39,7 +39,7 @@ wire [7:0] grayscaleValue_2 = sum_2[15:8];
 wire [7:0] grayscaleValue_3 = sum_3[15:8];
 wire [7:0] grayscaleValue_4 = sum_4[15:8];
 
-// Output the grayscale value in the lower 8 bits, pad upper 24 bits with 0
+// output the result as a 32-bit value where each byte is the grayscale value of one pixel
 assign result = (isMine) ? {grayscaleValue_4, grayscaleValue_3, grayscaleValue_2, grayscaleValue_1} : 32'b0;
 
 endmodule
