@@ -40,6 +40,7 @@ int main () {
         uint16_t sw1 = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel+1]);
         uint16_t sw2 = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel+2]);
         uint16_t sw3 = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel+3]);
+
         // Pack 2 swapped pixels into each 32-bit word
         uint32_t inA = (uint32_t)sw0 | ((uint32_t)sw1 << 16);
         uint32_t inB = (uint32_t)sw2 | ((uint32_t)sw3 << 16);
