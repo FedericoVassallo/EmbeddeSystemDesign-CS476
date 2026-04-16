@@ -86,6 +86,10 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
     reg        busIn_busy_reg;
     reg        busIn_error_reg;
     reg [9:0]  n_words_remaining;
+
+    // two working copies to avoid modifying the actual registers 
+    reg [31:0] bus_addr_current;     // working copy, auto-incremented
+    reg [8:0]  mem_addr_current;     // working copy, auto-incremented
   
     dualPortSSRAM #(
                     .bitwidth(32),
@@ -137,6 +141,8 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
         busOut_endTransaction   <= 1'b0;
         busOut_dataValid        <= 1'b0;
         busOut_busy             <= 1'b0;
+        bus_addr_current <= 32'b0;
+        mem_addr_current <= 9'b0;
         end
         else begin
 
@@ -171,6 +177,8 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
                         end else begin
                             status_busy <= 1'b1;
                             status_error <= 1'b0;  // clear error from previous transfer
+                            bus_addr_current  <= bus_start_address;   // initialize working copy
+                            mem_addr_current  <= memory_start_address; // initialize working copy
                             n_words_remaining <= block_size;
                             FSM_state <= REQUEST; //TODO: domanda al prof su domanda.txt!!!
                         end
@@ -200,7 +208,7 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
             end
             INFO:
             begin
-                busOut_addressData <= bus_start_address; // Set the starting address for the burst
+                busOut_addressData <= bus_addr_current; // Set the starting address for the burst
                 // In INFO state:
                 busOut_burstSize <= (n_words_remaining < {2'b0, burst_size} + 10'd1) ? (n_words_remaining[7:0] - 8'd1) : burst_size; // if we are in the last transaction, we set the burst size to the number of bursts needed for the last transaction, otherwise we set it to the configured burst size
                 busOut_byteEnables <= 4'b1111; // Enable all bytes (since is a 32-bit transfer)
@@ -225,9 +233,9 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
                 begin
                     dma_data_in <= busIn_addressData_reg; // Capture data from bus
                     dma_write_enable <= 1'b1; // Enable write to RAM
-                    dma_address <= memory_start_address; // Set initial DMA address
-                    memory_start_address <= memory_start_address + 9'd1; // Auto-increment DMA address
-                    bus_start_address <= bus_start_address + 32'd4; // Auto-increment bus address for next beat
+                    dma_address       <= mem_addr_current;   // Set initial DMA address
+                    mem_addr_current   <= mem_addr_current + 9'd1; // Auto-increment DMA address
+                    bus_addr_current <= bus_addr_current + 32'd4; // Auto-increment bus address for next 
                     n_words_remaining    <= n_words_remaining - 10'd1;  // decrement the number of words remaining for the transaction
                 end
                 else
