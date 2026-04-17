@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <swap.h>
 
 // Direct memory access (opCode 000)
 #define WRITE_TO_MEM(addr)    ((1 << 9) | (addr))  // bit 9 = write, bits[8:0] = address
@@ -29,13 +30,13 @@ int main() {
     asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
                 :[out]"=r"(result):[inA]"r"(READ_FROM_MEM(0))); 
 
-    printf("result: %x\n expected: %x", result, 0x12345678);
+    printf("result: %x expected: %x", result, 0x12345678);
 
     unsigned int *sdram_address = (unsigned int *) 0x00200000; // choosen an arbitrary address in SDRAM to test 
 
     // we write 16 values to the SDRAM using the custom instruction, we write to memory location 0,1,2,...15 and we write the value 0xF0000000, 0xF0000001,...0xF000000F
     for (int i = 0; i < 16; i++) {
-            sdram_address[i] = 0xF0000000 | i;
+            sdram_address[i] = i;
     }
 
     // set bus start address = SDRAM source
@@ -76,7 +77,7 @@ int main() {
     for (int i = 0; i < 16; i++) {
         asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
                      :[out]"=r"(result):[inA]"r"(READ_FROM_MEM(i)));
-        unsigned int expected = 0xF0000000 | i;
+        unsigned int expected = swap_u32(i); // we need to swap for the endianess 
         if (result != expected) {
             printf("MISMATCH at %d: got 0x%08X, expected 0x%08X\n", i, result, expected);
             errors++;
