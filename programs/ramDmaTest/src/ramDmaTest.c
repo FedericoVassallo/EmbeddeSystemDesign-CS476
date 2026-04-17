@@ -76,9 +76,9 @@ int main() {
 
     // check if there was error, the error bit is bit 1 of the status register, if it is set then we print an error message
     if (result & 0x2) { 
-        printf("DMA ERROR\n");
+        printf("DMA ERROR (error flag set)\n");
     } else {
-        printf("DMA correct\n");
+        printf("DMA correct (no error flag set)\n");
     }
 
     // we verify that the 16 values were correctly transferred to the CI memory by reading them back using the custom instruction and comparing with the expected value, if there is a mismatch we print an error message
