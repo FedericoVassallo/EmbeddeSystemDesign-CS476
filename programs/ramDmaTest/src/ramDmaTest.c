@@ -21,6 +21,8 @@ int main() {
 
     unsigned int result;
 
+    printf("\nTest 1: Writing and reading a value to/from CI-attached memory using custom instruction\n");
+
     // we write to the memory location 0 the value 0x12345678
     // no output register is needed since we are only writing to memory and not interested in the result of the instruction
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
@@ -30,9 +32,16 @@ int main() {
     asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
                 :[out]"=r"(result):[inA]"r"(READ_FROM_MEM(0))); 
 
-    printf("result: %x expected: %x", result, 0x12345678);
+    printf("result: %x      expected: %x\n", result, 0x12345678);
+    if (result == 0x12345678) {
+        printf("Test 1 PASSED\n");
+    } else {
+        printf("Test 1 FAILED\n");
+    }
 
     unsigned int *sdram_address = (unsigned int *) 0x00200000; // choosen an arbitrary address in SDRAM to test 
+
+    printf("\nTest 2: Using custom instruction to perform a DMA transfer from SDRAM to CI-attached memory\n");
 
     // we write 16 values to the SDRAM using the custom instruction, we write to memory location 0,1,2,...15 and we write the value 0xF0000000, 0xF0000001,...0xF000000F
     for (int i = 0; i < 16; i++) {
@@ -85,9 +94,9 @@ int main() {
     }
 
     if (errors == 0)
-        printf("All 16 words verified OK!\n");
+        printf("Test 2 PASSED: All 16 words verified\n");
     else
-        printf("%d errors found!\n", errors);
+        printf("Test 2 FAILED: %d errors found!\n", errors);
 
     return 0;
 }
