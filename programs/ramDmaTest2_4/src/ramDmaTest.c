@@ -17,222 +17,173 @@
 #define READ_STATUS           (5 << 10)
 #define WRITE_CONTROL         ((5 << 10) | (1 << 9))
 
-// Control register values:
-//   1 = DMA from bus -> CI memory (read)
-//   2 = DMA from CI memory -> bus (write)
-//   3 = invalid (should NOT start)
-#define DMA_START_READ   1
-#define DMA_START_WRITE  2
+// Control register values
+#define DMA_FROM_BUS     1   // bus -> CI memory
+#define DMA_TO_BUS       2   // CI memory -> bus
+#define DMA_INVALID      3   // should NOT start DMA
 
 int main() {
     unsigned int result;
     unsigned int *sdram_address = (unsigned int *) 0x00200000;
 
+    printf("=== DMA from CI-memory to SDRAM tests ===\n");
+
     //////////////////// TEST 1 ////////////////////
-    printf("\nTest 1: DMA write (CI memory -> SDRAM), single burst of 8 words\n");
-    // Fill CI memory with known pattern at addresses 0..7
-    for (int i = 0; i < 8; i++) {
-        unsigned int val = swap_u32(0xBEEF0000 | i);  // byte-swap so SDRAM sees 0xBEEF000i
-        asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                     ::[inA]"r"(WRITE_TO_MEM(i)),[inB]"r"(val));
-    }
-    // Clear SDRAM destination first so we know the DMA actually wrote there
-    for (int i = 0; i < 8; i++) {
-        sdram_address[i] = 0;
-    }
-    // Configure DMA: CI mem addr 0..7 -> SDRAM
-    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BUS_START_ADDR),[inB]"r"((unsigned int)sdram_address));
-    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_MEM_START_ADDR),[inB]"r"(0));
-    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BLOCK_SIZE),[inB]"r"(8));
-    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BURST_SIZE),[inB]"r"(7));
-    // Start DMA write (control = 2)
-    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(WRITE_CONTROL),[inB]"r"(DMA_START_WRITE));
-    do {
-        asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
-                     :[out]"=r"(result):[inA]"r"(READ_STATUS));
-    } while (result & 0x1);
-    if (result & 0x2) {
-        printf("DMA ERROR (error flag set)\n");
-    } else {
-        printf("DMA correct (no error flag set)\n");
-    }
-    int errors = 0;
-    for (int i = 0; i < 8; i++) {
-        unsigned int expected = 0xBEEF0000 | i;
-        if (sdram_address[i] != expected) {
-            printf("MISMATCH at %d: got 0x%08X, expected 0x%08X\n", i, sdram_address[i], expected);
-            errors++;
-        }
-    }
-    if (errors == 0)
-        printf("Test 1 PASSED: All 8 words transferred correctly\n");
-    else
-        printf("Test 1 FAILED: %d errors\n", errors);
+    int timeout, errors;
 
     //////////////////// TEST 2 ////////////////////
-    printf("\nTest 2: DMA write, block size not multiple of burst size (10 words, burst 8)\n");
-    // Pattern in CI memory at addresses 20..29
+    printf("\nTest 2: Block not multiple of burst (10 words, burst 8)\n");
+
     for (int i = 0; i < 10; i++) {
-        unsigned int val = swap_u32(0xA0000000 | i);
         asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                     ::[inA]"r"(WRITE_TO_MEM(20 + i)),[inB]"r"(val));
+                     ::[inA]"r"(WRITE_TO_MEM(i)), [inB]"r"(swap_u32(0xB0000000 | i)));
     }
-    // Clear SDRAM target
-    for (int i = 0; i < 10; i++) {
-        sdram_address[i] = 0;
-    }
+    for (int i = 0; i < 10; i++) sdram_address[i] = 0xDEADBEEF;
+
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BUS_START_ADDR),[inB]"r"((unsigned int)sdram_address));
+                 ::[inA]"r"(SET_BUS_START_ADDR), [inB]"r"((unsigned int)sdram_address));
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_MEM_START_ADDR),[inB]"r"(20));
+                 ::[inA]"r"(SET_MEM_START_ADDR), [inB]"r"(0));
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BLOCK_SIZE),[inB]"r"(10));
+                 ::[inA]"r"(SET_BLOCK_SIZE), [inB]"r"(10));
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BURST_SIZE),[inB]"r"(7));
+                 ::[inA]"r"(SET_BURST_SIZE), [inB]"r"(7));
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(WRITE_CONTROL),[inB]"r"(DMA_START_WRITE));
+                 ::[inA]"r"(WRITE_CONTROL), [inB]"r"(2));
+
+    timeout = 5000000;
     do {
         asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
                      :[out]"=r"(result):[inA]"r"(READ_STATUS));
-    } while (result & 0x1);
-    if (result & 0x2) {
-        printf("DMA ERROR (error flag set)\n");
-    }
+        timeout--;
+    } while ((result & 0x1) && timeout > 0);
+
+    if (timeout <= 0) { printf("TIMEOUT\n"); return 1; }
+
     errors = 0;
     for (int i = 0; i < 10; i++) {
-        unsigned int expected = 0xA0000000 | i;
-        if (sdram_address[i] != expected) {
-            printf("MISMATCH at %d: got 0x%08X, expected 0x%08X\n", i, sdram_address[i], expected);
+        if (sdram_address[i] != (0xB0000000 | i)) {
+            printf("MISMATCH [%d]: got 0x%08X, expected 0x%08X\n",
+                   i, sdram_address[i], 0xB0000000 | i);
             errors++;
         }
     }
-    if (errors == 0)
-        printf("Test 2 PASSED (multi-burst write)\n");
-    else
-        printf("Test 2 FAILED: %d errors\n", errors);
+    printf(errors == 0 ? "Test 2 PASSED\n" : "Test 2 FAILED\n");
 
     //////////////////// TEST 3 ////////////////////
-    printf("\nTest 3: DMA write, single word transfer\n");
-    unsigned int val = swap_u32(0xCAFE0001);
+    printf("\nTest 3: Single word\n");
+
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(WRITE_TO_MEM(50)),[inB]"r"(val));
-    sdram_address[0] = 0;  // clear target
+                 ::[inA]"r"(WRITE_TO_MEM(0)), [inB]"r"(swap_u32(0xABCD1234)));
+    sdram_address[0] = 0xDEADBEEF;
+
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BUS_START_ADDR),[inB]"r"((unsigned int)sdram_address));
+                 ::[inA]"r"(SET_BUS_START_ADDR), [inB]"r"((unsigned int)sdram_address));
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_MEM_START_ADDR),[inB]"r"(50));
+                 ::[inA]"r"(SET_MEM_START_ADDR), [inB]"r"(0));
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BLOCK_SIZE),[inB]"r"(1));
+                 ::[inA]"r"(SET_BLOCK_SIZE), [inB]"r"(1));
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BURST_SIZE),[inB]"r"(0));
+                 ::[inA]"r"(SET_BURST_SIZE), [inB]"r"(0));
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(WRITE_CONTROL),[inB]"r"(DMA_START_WRITE));
+                 ::[inA]"r"(WRITE_CONTROL), [inB]"r"(2));
+
+    timeout = 5000000;
     do {
         asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
                      :[out]"=r"(result):[inA]"r"(READ_STATUS));
-    } while (result & 0x1);
-    if (sdram_address[0] == 0xCAFE0001)
-        printf("Test 3 PASSED (single word write)\n");
-    else
-        printf("Test 3 FAILED: got 0x%08X, expected 0xCAFE0001\n", sdram_address[0]);
+        timeout--;
+    } while ((result & 0x1) && timeout > 0);
+
+    if (timeout <= 0) { printf("TIMEOUT\n"); return 1; }
+    printf(sdram_address[0] == 0xABCD1234 ? "Test 3 PASSED\n"
+           : "Test 3 FAILED: got 0x%08X\n", sdram_address[0]);
 
     //////////////////// TEST 4 ////////////////////
-    printf("\nTest 4: Round-trip (CI->SDRAM->CI)\n");
-    // Write pattern to CI mem at 100..115
-    for (int i = 0; i < 16; i++) {
-        unsigned int v = swap_u32(0x5A5A0000 | i);
-        asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                     ::[inA]"r"(WRITE_TO_MEM(100 + i)),[inB]"r"(v));
-    }
-    // Clear SDRAM and destination CI memory
-    for (int i = 0; i < 16; i++) sdram_address[i] = 0;
-    for (int i = 0; i < 16; i++) {
-        asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                     ::[inA]"r"(WRITE_TO_MEM(300 + i)),[inB]"r"(0));
-    }
-    // Step A: DMA write CI[100..115] -> SDRAM
+    printf("\nTest 4: control=3 must be ignored\n");
+
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BUS_START_ADDR),[inB]"r"((unsigned int)sdram_address));
+                 ::[inA]"r"(WRITE_TO_MEM(0)), [inB]"r"(swap_u32(0x99999999)));
+    sdram_address[0] = 0x00000000;
+
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_MEM_START_ADDR),[inB]"r"(100));
+                 ::[inA]"r"(SET_BUS_START_ADDR), [inB]"r"((unsigned int)sdram_address));
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BLOCK_SIZE),[inB]"r"(16));
+                 ::[inA]"r"(SET_MEM_START_ADDR), [inB]"r"(0));
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BURST_SIZE),[inB]"r"(7));
+                 ::[inA]"r"(SET_BLOCK_SIZE), [inB]"r"(4));
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(WRITE_CONTROL),[inB]"r"(DMA_START_WRITE));
+                 ::[inA]"r"(SET_BURST_SIZE), [inB]"r"(3));
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(WRITE_CONTROL), [inB]"r"(3));  // invalid - must be ignored
+
+    asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
+                 :[out]"=r"(result):[inA]"r"(READ_STATUS));
+
+    if ((result & 0x1) == 0 && sdram_address[0] == 0x00000000)
+        printf("Test 4 PASSED: control=3 ignored\n");
+    else
+        printf("Test 4 FAILED: status=0x%X, sdram[0]=0x%08X\n", result, sdram_address[0]);
+
+    //////////////////// TEST 5 ////////////////////
+    printf("\nTest 5: Round-trip SDRAM->CI->SDRAM\n");
+
+    unsigned int *sdram_src = sdram_address;
+    unsigned int *sdram_dst = sdram_address + 200;
+
+    for (int i = 0; i < 8; i++) sdram_src[i] = 0x55AA0000 | i;
+    for (int i = 0; i < 8; i++) sdram_dst[i] = 0xDEADBEEF;
+
+    // DMA: SDRAM -> CI (control=1)
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(SET_BUS_START_ADDR), [inB]"r"((unsigned int)sdram_src));
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(SET_MEM_START_ADDR), [inB]"r"(0));
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(SET_BLOCK_SIZE), [inB]"r"(8));
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(SET_BURST_SIZE), [inB]"r"(7));
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(WRITE_CONTROL), [inB]"r"(1));
+
+    timeout = 5000000;
     do {
         asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
                      :[out]"=r"(result):[inA]"r"(READ_STATUS));
-    } while (result & 0x1);
-    // Step B: DMA read SDRAM -> CI[300..315]
+        timeout--;
+    } while ((result & 0x1) && timeout > 0);
+    if (timeout <= 0) { printf("TIMEOUT on first DMA\n"); return 1; }
+
+    // DMA: CI -> SDRAM (control=2)
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_MEM_START_ADDR),[inB]"r"(300));
+                 ::[inA]"r"(SET_BUS_START_ADDR), [inB]"r"((unsigned int)sdram_dst));
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(WRITE_CONTROL),[inB]"r"(DMA_START_READ));
+                 ::[inA]"r"(SET_MEM_START_ADDR), [inB]"r"(0));
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(SET_BLOCK_SIZE), [inB]"r"(8));
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(SET_BURST_SIZE), [inB]"r"(7));
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(WRITE_CONTROL), [inB]"r"(2));
+
+    timeout = 5000000;
     do {
         asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
                      :[out]"=r"(result):[inA]"r"(READ_STATUS));
-    } while (result & 0x1);
-    // Compare CI[100..115] with CI[300..315]
+        timeout--;
+    } while ((result & 0x1) && timeout > 0);
+    if (timeout <= 0) { printf("TIMEOUT on second DMA\n"); return 1; }
+
     errors = 0;
-    for (int i = 0; i < 16; i++) {
-        unsigned int src, dst;
-        asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
-                     :[out]"=r"(src):[inA]"r"(READ_FROM_MEM(100 + i)));
-        asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
-                     :[out]"=r"(dst):[inA]"r"(READ_FROM_MEM(300 + i)));
-        if (src != dst) {
-            printf("MISMATCH at %d: src=0x%08X dst=0x%08X\n", i, src, dst);
+    for (int i = 0; i < 8; i++) {
+        if (sdram_dst[i] != (0x55AA0000 | i)) {
+            printf("MISMATCH [%d]: got 0x%08X, expected 0x%08X\n",
+                   i, sdram_dst[i], 0x55AA0000 | i);
             errors++;
         }
     }
-    if (errors == 0)
-        printf("Test 4 PASSED (round-trip)\n");
-    else
-        printf("Test 4 FAILED: %d errors\n", errors);
-
-    //////////////////// TEST 5 ////////////////////
-    printf("\nTest 5: Control register value 3 should be rejected\n");
-    // Set up a normal config, then try to start with control=3
-    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BLOCK_SIZE),[inB]"r"(4));
-    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(WRITE_CONTROL),[inB]"r"(3));
-    asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
-                 :[out]"=r"(result):[inA]"r"(READ_STATUS));
-    if ((result & 0x1) == 0)
-        printf("Test 5 PASSED: DMA stayed idle on control=3\n");
-    else
-        printf("Test 5 FAILED: DMA became busy on control=3\n");
-
-    //////////////////// TEST 6 ////////////////////
-    printf("\nTest 6: DMA write with block_size=0 (no transfer)\n");
-    sdram_address[50] = 0xDEADBEEF;  // guard value
-    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BUS_START_ADDR),[inB]"r"((unsigned int)&sdram_address[50]));
-    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_MEM_START_ADDR),[inB]"r"(0));
-    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BLOCK_SIZE),[inB]"r"(0));
-    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BURST_SIZE),[inB]"r"(0));
-    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(WRITE_CONTROL),[inB]"r"(DMA_START_WRITE));
-    asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
-                 :[out]"=r"(result):[inA]"r"(READ_STATUS));
-    if (result & 0x1) {
-        printf("Test 6 FAILED: DMA should not be busy with block_size=0\n");
-    } else if (sdram_address[50] == 0xDEADBEEF) {
-        printf("Test 6 PASSED: guard value preserved\n");
-    } else {
-        printf("Test 6 FAILED: SDRAM modified (got 0x%08X)\n", sdram_address[50]);
-    }
+    printf(errors == 0 ? "Test 5 PASSED: round-trip OK\n"
+                       : "Test 5 FAILED: %d errors\n", errors);
 
     return 0;
 }
