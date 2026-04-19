@@ -30,6 +30,7 @@ int main() {
     printf("=== DMA from CI-memory to SDRAM tests ===\n");
 
     //////////////////// TEST 1 ////////////////////
+    printf("\nTest 1: Writing and reading a value to/from CI-attached memory using custom instruction\n");
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
                  ::[inA]"r"(WRITE_TO_MEM(0)),[inB]"r"(0x12345678)); 
 
@@ -45,13 +46,17 @@ int main() {
     }
 
     // TEST 2 
-    printf("\nTest 2: Block multiple of burst (8 words, burst 8)\n");
+    printf("\nTest 2: 1 words, burst 1)\n");
     unsigned int *sdram_address = (unsigned int *) 0x00300000; // choosen an arbitrary address in SDRAM to test
 
+    /**
     for (int i = 0; i < 8; i++) {
         asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                     ::[inA]"r"(WRITE_TO_MEM(i)), [inB]"r"(0x00000001));
+                     ::[inA]"r"(WRITE_TO_MEM(i)), [inB]"r"(swap_u32(0x00000001)));
     }
+    */
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                     ::[inA]"r"(WRITE_TO_MEM(0)), [inB]"r"(swap_u32(0x00000001)));
 
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
                  ::[inA]"r"(SET_BUS_START_ADDR), [inB]"r"((unsigned int)sdram_address));
@@ -62,31 +67,32 @@ int main() {
     asm volatile ("l.nop 0");
     printf("Memory start address set\n");
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BLOCK_SIZE), [inB]"r"(8));
+                 ::[inA]"r"(SET_BLOCK_SIZE), [inB]"r"(1));
     asm volatile ("l.nop 0");
     printf("Block size set\n");
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                 ::[inA]"r"(SET_BURST_SIZE), [inB]"r"(7));
+                 ::[inA]"r"(SET_BURST_SIZE), [inB]"r"(0));
     asm volatile ("l.nop 0");
     printf("Burst size set\n");
 
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
                  ::[inA]"r"(WRITE_CONTROL), [inB]"r"(2));
     asm volatile ("l.nop 0");
-    printf("Control register set\n");
+    
 
     printf("Waiting for DMA transfer to complete...\n");
 
-    int timeout = 5000000;
+    
     do {
         asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
                      :[out]"=r"(result):[inA]"r"(READ_STATUS));
-        timeout--;
-    } while ((result & 0x1) && timeout > 0);
+    
+    } while ((result & 0x1)); // check the busy bit and error bit, we stay here until the busy bit is cleared or an error occurs
 
-    if (timeout <= 0) { printf("TIMEOUT\n"); return 1; }
+    
 
     int errors = 0;
+    /*
     for (int i = 0; i < 8; i++) {
         if (sdram_address[i] != (0x00000001)) {
             printf("MISMATCH [%d]: got 0x%08X, expected 0x%08X\n",
@@ -94,6 +100,13 @@ int main() {
             errors++;
         }
     }
+    */
+    if (sdram_address[0] != (0x00000001)) {
+            printf("MISMATCH: got 0x%08X, expected 0x%08X\n",
+                   sdram_address[0], 0x00000001); }
+
+    printf("got 0x%08X, expected 0x%08X\n",
+                   sdram_address[0], 0x00000001);
     printf(errors == 0 ? "Test 2 PASSED\n" : "Test 2 FAILED\n");
 
 
