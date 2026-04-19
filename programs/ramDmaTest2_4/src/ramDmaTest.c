@@ -56,7 +56,7 @@ int main() {
     }
     */
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                     ::[inA]"r"(WRITE_TO_MEM(0)), [inB]"r"(swap_u32(0x00000001)));
+                     ::[inA]"r"(WRITE_TO_MEM(0)), [inB]"r"(swap_u32(0x00000005)));
 
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
                  ::[inA]"r"(SET_BUS_START_ADDR), [inB]"r"((unsigned int)sdram_address));
@@ -91,7 +91,7 @@ int main() {
 
     
 
-    int errors = 0;
+    
     /*
     for (int i = 0; i < 8; i++) {
         if (sdram_address[i] != (0x00000001)) {
@@ -101,15 +101,67 @@ int main() {
         }
     }
     */
-    if (sdram_address[0] != (0x00000001)) {
+    if (sdram_address[0] != (0x00000005)) {
             printf("MISMATCH: got 0x%08X, expected 0x%08X\n",
-                   sdram_address[0], 0x00000001); }
+                   sdram_address[0], 0x00000005); }
 
     printf("got 0x%08X, expected 0x%08X\n",
-                   sdram_address[0], 0x00000001);
+                   sdram_address[0], 0x00000005);
+    
+    ////////// TEST 3 //////////////////////////
+    printf("\nTest 3: Block multiple of burst (8 words, burst 8)\n");
+    
+
+    for (int i = 0; i < 8; i++) {
+        asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                     ::[inA]"r"(WRITE_TO_MEM(i)), [inB]"r"(swap_u32(0x00000005)));
+    }
+
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(SET_BUS_START_ADDR), [inB]"r"((unsigned int)sdram_address));
+    asm volatile ("l.nop 0");
+    printf("Bus start address set\n");
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(SET_MEM_START_ADDR), [inB]"r"(0));
+    asm volatile ("l.nop 0");
+    printf("Memory start address set\n");
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(SET_BLOCK_SIZE), [inB]"r"(8));
+    asm volatile ("l.nop 0");
+    printf("Block size set\n");
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(SET_BURST_SIZE), [inB]"r"(7));
+    asm volatile ("l.nop 0");
+    printf("Burst size set\n");
+
+    asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
+                 ::[inA]"r"(WRITE_CONTROL), [inB]"r"(2));
+    asm volatile ("l.nop 0");
+
+    printf("Waiting for DMA transfer to complete...\n");
+    asm volatile ("l.nop 0");
+    asm volatile ("l.nop 0");
+    asm volatile ("l.nop 0");
+    asm volatile ("l.nop 0");
+    asm volatile ("l.nop 0");
+    int timeout = 5000000;
+    do {
+        asm volatile ("l.nios_rrr %[out],%[inA],r0,0x8"
+                     :[out]"=r"(result):[inA]"r"(READ_STATUS));
+        timeout--;
+    } while ((result & 0x1) && timeout > 0);
+
+    if (timeout <= 0) { printf("TIMEOUT\n"); return 1; }
+
+    int errors = 0;
+    for (int i = 0; i < 8; i++) {
+        if (sdram_address[i] != (0x00000005)) {
+            printf("MISMATCH [%d]: got 0x%08X, expected 0x%08X\n",
+                   i, sdram_address[i], 0x00000005);
+            errors++;
+        }
+    }
     printf(errors == 0 ? "Test 2 PASSED\n" : "Test 2 FAILED\n");
-
-
 
 
     return 0;
