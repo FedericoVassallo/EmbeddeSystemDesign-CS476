@@ -154,11 +154,16 @@ int main() {
     if (timeout <= 0) { printf("TIMEOUT\n"); return 1; }
 
     int errors = 0;
+    asm volatile ("l.nop 0");
     for (int i = 0; i < 8; i++) {
         if (sdram_address[i] != (0x00000005)) {
             printf("MISMATCH [%d]: got 0x%08X, expected 0x%08X\n",
                    i, sdram_address[i], 0x00000005);
             errors++;
+        }
+        else {
+            printf("MATCH [%d]: got 0x%08X, expected 0x%08X\n",
+                   i, sdram_address[i], 0x00000005);
         }
     }
     printf(errors == 0 ? "Test 2 PASSED\n" : "Test 2 FAILED\n");
