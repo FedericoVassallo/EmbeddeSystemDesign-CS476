@@ -94,8 +94,6 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
   reg is_read; // reg to see if we are writing or reading from the bus, used because maybe the control register get changed externally why we are doing our operations (1 if we are reading, 0 if we are writing)
   reg [9:0] words_sent_in_burst; // reg to keep track of how many words we have written on the bus, used to understand when to end the transaction in the write case
 
-  reg [4:0] drain_count;  // declare alongside your other regs
-
   dualPortSSRAM #(
                   .bitwidth(32),
                   .nrOfEntries(512),
@@ -189,7 +187,6 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
                 status_error <= 1'b0;  // clear error from previous transfer
                 bus_addr_current  <= bus_start_address;   // initialize working copy
                 mem_addr_current  <= memory_start_address; // initialize working copy
-                dma_address <= memory_start_address;
                 n_words_remaining <= block_size;
                 words_sent_in_burst <= 10'b0;
                 FSM_state <= REQUEST; //TODO: domanda al prof su domanda.txt!!!
@@ -210,7 +207,6 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
           busRequests <= 1'b1; // Request the bus
           FSM_state <= REQUEST_DONE; // Move to REQUEST_DONE state to wait for grant
           busOut_endTransaction <= 1'b0;   // clear from previous burst
-          
         end
         REQUEST_DONE:
         begin
@@ -289,29 +285,26 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
         begin
           dma_write_enable <= 1'b0;
           if (is_read || !busIn_busy) begin
+            // Slave accepted the last beat (or this is a read transaction,
+            // where END_TRANSACTION is just a passthrough).
             busOut_dataValid      <= 1'b0;
             busOut_addressData    <= 32'b0;
             busOut_endTransaction <= (is_read) ? 1'b0 : 1'b1;
             if (n_words_remaining == 10'd0) begin
-              // Hold status_busy until the drain counter expires.
-              if (drain_count == 5'd20) begin
-                status_busy      <= 1'b0;
-                control_register <= 2'b0;
-                drain_count      <= 5'd0;
-                FSM_state        <= IDLE;
-              end else begin
-                status_busy      <= 1'b1;
-                drain_count           <= drain_count + 5'd1;
-                busOut_endTransaction <= 1'b0;  
-              end
+              status_busy      <= 1'b0;
+              control_register <= 2'b0;
+              FSM_state        <= IDLE;
             end else begin
               FSM_state <= REQUEST;
             end
           end else begin
+            // Write transaction with slave busy on the last beat: hold dataValid
+            // and addressData (no assignment = keeps current value), don't assert
+            // endTransaction yet, don't advance the FSM.
             busOut_dataValid      <= 1'b1;
             busOut_endTransaction <= 1'b0;
           end
-        end
+        end   
         ERROR:
         begin
           busOut_dataValid <= 1'b0; // Clear data valid on error
