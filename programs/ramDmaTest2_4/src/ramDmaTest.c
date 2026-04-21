@@ -47,7 +47,7 @@ int main() {
 
     // TEST 2 
     printf("\nTest 2: 1 words, burst 1)\n");
-    unsigned int *sdram_address = (unsigned int *) 0x00300000; // choosen an arbitrary address in SDRAM to test
+    unsigned int *sdram_address = (unsigned int *) 0x00320000; // choosen an arbitrary address in SDRAM to test
 
     /**
     for (int i = 0; i < 8; i++) {
@@ -134,14 +134,14 @@ int main() {
     asm volatile ("l.nop 0");
     printf("Burst size set\n");
 
+    asm volatile ("l.nop 0");
+
     asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
                  ::[inA]"r"(WRITE_CONTROL), [inB]"r"(2));
     asm volatile ("l.nop 0");
 
     printf("Waiting for DMA transfer to complete...\n");
-    asm volatile ("l.nop 0");
-    asm volatile ("l.nop 0");
-    asm volatile ("l.nop 0");
+    
     asm volatile ("l.nop 0");
     asm volatile ("l.nop 0");
     int timeout = 5000000;

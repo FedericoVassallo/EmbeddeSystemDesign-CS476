@@ -284,20 +284,27 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
         END_TRANSACTION:
         begin
           dma_write_enable <= 1'b0;
-          busOut_dataValid <= 1'b0;
-          busOut_addressData <= 32'b0;
-          busOut_endTransaction <= (is_read) ? 1'b0 : 1'b1; // we need to signal the end of the transaction only in the write case
-          if (n_words_remaining == 10'd0 )
-          begin
-            status_busy <= 1'b0;
-            control_register <= 2'b0; // Clear control register to indicate transfer is done
-            FSM_state <= IDLE;
+          if (is_read || !busIn_busy) begin
+            // Slave accepted the last beat (or this is a read transaction,
+            // where END_TRANSACTION is just a passthrough).
+            busOut_dataValid      <= 1'b0;
+            busOut_addressData    <= 32'b0;
+            busOut_endTransaction <= (is_read) ? 1'b0 : 1'b1;
+            if (n_words_remaining == 10'd0) begin
+              status_busy      <= 1'b0;
+              control_register <= 2'b0;
+              FSM_state        <= IDLE;
+            end else begin
+              FSM_state <= REQUEST;
+            end
+          end else begin
+            // Write transaction with slave busy on the last beat: hold dataValid
+            // and addressData (no assignment = keeps current value), don't assert
+            // endTransaction yet, don't advance the FSM.
+            busOut_dataValid      <= 1'b1;
+            busOut_endTransaction <= 1'b0;
           end
-          else
-          begin
-            FSM_state <= REQUEST;
-          end
-        end
+        end   
         ERROR:
         begin
           busOut_dataValid <= 1'b0; // Clear data valid on error

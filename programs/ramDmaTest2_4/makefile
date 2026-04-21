@@ -37,7 +37,7 @@ BUILD = build-debug
 _CFLAGS += -Og -g
 else
 BUILD = build-release
-_CFLAGS += -DNDEBUG -Os
+_CFLAGS += -DNDEBUG -O2
 endif
 
 # you can support new targets here...
