@@ -85,8 +85,6 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
   reg [31:0] busIn_addressData_reg;
   reg        busIn_endTransaction_reg;
   reg        busIn_dataValid_reg;
-  reg        busIn_busy_reg;
-  reg        busIn_error_reg;
   reg [9:0]  n_words_remaining;
 
   // two working copies to avoid modifying the actual registers
@@ -131,8 +129,6 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
       busIn_addressData_reg    <= 32'b0;
       busIn_endTransaction_reg <= 1'b0;
       busIn_dataValid_reg      <= 1'b0;
-      busIn_busy_reg           <= 1'b0;
-      busIn_error_reg          <= 1'b0;
       // we set the state to IDLE on reset
       FSM_state <= IDLE;
       dma_write_enable <= 1'b0;
@@ -158,8 +154,6 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
       busIn_addressData_reg    <= busIn_addressData;
       busIn_endTransaction_reg <= busIn_endTransaction;
       busIn_dataValid_reg      <= busIn_dataValid;
-      busIn_busy_reg           <= busIn_busy;
-      busIn_error_reg          <= busIn_error;
 
       // 1-cycle delay for read operations (since RAM takes 2 cycles)
       delayedDoneFlag <= isReadOp;
@@ -242,10 +236,10 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
           busOut_beginTransaction <= 1'b0; // Clear begin transaction after the first cycle
 
           // Perform READ_BUS read/writes to RAM and bus
-          FSM_state <= (busIn_error_reg) ? ERROR :
+          FSM_state <= (busIn_error) ? ERROR :
             (busIn_endTransaction_reg) ? END_TRANSACTION : READ_BUS; // If an error occurs or the transaction ends, move to the respective state, otherwise stay in READ_BUS
 
-          if (busIn_dataValid_reg && !busIn_error_reg)
+          if (busIn_dataValid_reg && !busIn_error)
           begin
             dma_data_in <= busIn_addressData_reg; // Capture data from bus
             dma_write_enable <= 1'b1; // Enable write to RAM
@@ -264,14 +258,14 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
           dma_write_enable <= 1'b0;  // RAM in read mode on port B during bus writes
 
           // Place the current RAM word on the bus, or hold during slave busy.
-          busOut_addressData <= (busIn_busy_reg) ? busOut_addressData : ram_dataout_B;
+          busOut_addressData <= (busIn_busy) ? busOut_addressData : ram_dataout_B;
 
           // Advance all counters together when not busy.
-          dma_address        <= (busIn_busy_reg) ? dma_address        : dma_address + 9'd1;
-          mem_addr_current   <= (busIn_busy_reg) ? mem_addr_current   : mem_addr_current + 9'd1;
-          bus_addr_current   <= (busIn_busy_reg) ? bus_addr_current   : bus_addr_current + 32'd4;
-          n_words_remaining  <= (busIn_busy_reg) ? n_words_remaining  : n_words_remaining - 10'd1;
-          words_sent_in_burst <= (busIn_busy_reg) ? words_sent_in_burst : words_sent_in_burst + 10'd1;
+          dma_address        <= (busIn_busy) ? dma_address        : dma_address + 9'd1;
+          mem_addr_current   <= (busIn_busy) ? mem_addr_current   : mem_addr_current + 9'd1;
+          bus_addr_current   <= (busIn_busy) ? bus_addr_current   : bus_addr_current + 32'd4;
+          n_words_remaining  <= (busIn_busy) ? n_words_remaining  : n_words_remaining - 10'd1;
+          words_sent_in_burst <= (busIn_busy) ? words_sent_in_burst : words_sent_in_burst + 10'd1;
 
           // Clear fields only meaningful in the address phase.
           busOut_burstSize        <= 8'b0;
@@ -280,12 +274,12 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
           busOut_beginTransaction <= 1'b0;
 
           // Transition on the same cycle we place the last word of the burst/block.
-          FSM_state <= busIn_error_reg ? ERROR :
-            (!busIn_busy_reg && ((words_sent_in_burst == {2'b0, burst_size}) || (n_words_remaining == 10'd1))) ? END_TRANSACTION :
+          FSM_state <= busIn_error ? ERROR :
+            (!busIn_busy && ((words_sent_in_burst == {2'b0, burst_size}) || (n_words_remaining == 10'd1))) ? END_TRANSACTION :
               WRITE_BUS;
 
           // dataValid held high throughout WRITE_BUS; dropped only on error.
-          busOut_dataValid <= (busIn_error_reg) ? 1'b0 : 1'b1;
+          busOut_dataValid <= (busIn_error) ? 1'b0 : 1'b1;
         end
         END_TRANSACTION:
         begin
