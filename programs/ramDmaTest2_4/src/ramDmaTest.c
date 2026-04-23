@@ -40,7 +40,7 @@ int main() {
         printf("Test 1 FAILED\n");
     }
 
-    unsigned int *sdram_address = (unsigned int *) 0x00200000; // arbitrary SDRAM destination
+    volatile unsigned int *sdram_address = (volatile unsigned int *) 0x00200000; // arbitrary SDRAM destination
 
     //////////////////// TEST 2 ////////////////////
     printf("\nTest 2: Using custom instruction to perform a DMA transfer from CI-attached memory to SDRAM\n");
