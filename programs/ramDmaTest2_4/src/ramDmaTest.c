@@ -220,12 +220,12 @@ int main() {
 
     //////////////////// TEST 7 ////////////////////
     printf("\nTest 7: Two back-to-back DMA transfers (verify status_busy clears between transfers)\n");
-    // this catches a class of bugs where status_busy never clears after the first
-    // transfer, or where state from the first transfer leaks into the second
+    // we run two single-word DMA transfers back-to-back, changing the test value each time
+    // and checking that the status_busy bit clears after the first transfer before starting the next one
     for (int round = 0; round < 2; round++) {
-        unsigned int marker = 0xB0000000 | round;
+        unsigned int test_value = 0xB0000000 | round;
         asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
-                     ::[inA]"r"(WRITE_TO_MEM(0)),[inB]"r"(swap_u32(marker)));
+                     ::[inA]"r"(WRITE_TO_MEM(0)),[inB]"r"(swap_u32(test_value)));
         sdram_address[round] = 0x77777777;
         asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
                      ::[inA]"r"(SET_BUS_START_ADDR),[inB]"r"((unsigned int)&sdram_address[round]));
@@ -258,7 +258,7 @@ int main() {
     //////////////////// TEST 8 ////////////////////
     printf("\nTest 8: round-test CI to SDRAM to CI (write 32 words out then DMA back)\n");
     // writes to the bus via DMA, reads it back via DMA into a different CI
-    // memory region, and checks the round-trip preserves every word.
+    // memory region, and checks that every word got preserved.
     for (int i = 0; i < 32; i++) {
         asm volatile ("l.nios_rrr r0,%[inA],%[inB],0x8"
                      ::[inA]"r"(WRITE_TO_MEM(i)),[inB]"r"(swap_u32(0xC0000000 | i)));
