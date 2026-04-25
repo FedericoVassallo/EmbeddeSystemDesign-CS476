@@ -207,6 +207,7 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
           busRequests <= 1'b1; // Request the bus
           FSM_state <= REQUEST_DONE; // Move to REQUEST_DONE state to wait for grant
           busOut_endTransaction <= 1'b0;   // clear from previous burst
+          control_register      <= 2'b0;   // clear control register as the DMA transfer starts
         end
         REQUEST_DONE:
         begin
@@ -292,7 +293,6 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
             busOut_endTransaction <= (is_read) ? 1'b0 : 1'b1;
             if (n_words_remaining == 10'd0) begin
               status_busy      <= 1'b0;
-              control_register <= 2'b0;
               FSM_state        <= IDLE;
             end else begin
               FSM_state <= REQUEST;
