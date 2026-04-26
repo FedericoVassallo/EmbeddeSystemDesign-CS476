@@ -155,11 +155,13 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
       busIn_endTransaction_reg <= busIn_endTransaction;
       busIn_dataValid_reg      <= busIn_dataValid;
 
+      status_error <= (delayedDoneFlag && isReadOp && (opCode == 3'b101)) ? 1'b0 : status_error; // we clear the error bit after it gets read by the CPU, (also using the delayedDoneFlag to make sure that it is cleared only after the read operation is done and not before)
+
       // 1-cycle delay for read operations (since RAM takes 2 cycles)
       delayedDoneFlag <= isReadOp;
 
       // Handle CPU writes to our config registers
-      if (isWriteOp)
+      if (isWriteOp && !status_busy)
       begin
         case (opCode)
           3'b001:
@@ -172,7 +174,7 @@ module ramDmaCi # ( parameter[7:0] customId = 8'h00 )
             burst_size <= valueB[7:0];
           3'b101:
           begin
-            if ((valueB[1] || valueB[0]) && !status_busy)
+            if ((valueB[1] || valueB[0]))
             begin
               control_register <= valueB[1:0]; // Set control register to indicate transfer is starting
               if (block_size == 10'd0 || (valueB[1:0] == 2'b11))
