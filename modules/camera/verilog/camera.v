@@ -166,9 +166,27 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
   reg [7:0] s_byte3Reg,s_byte2Reg,s_byte1Reg;
   reg [8:0] s_busSelectReg;
   wire [31:0] s_busPixelWord;
+  wire [31:0] s_grayscalePixelWord; // defined the s_grayscalePixelWord that will contain two RGB565-grayscale pixels
   wire [31:0] s_pixelWord = {s_byte1Reg,camData,s_byte3Reg,s_byte2Reg};
   wire s_weLineBuffer = (s_pixelCountReg[1:0] == 2'b11) ? hsync : 1'b0;
-  
+
+  // now we Perform the RGB565 to grayscale conversion on the two pixels contained in the signal s_pixelWord as done in PW2
+
+  wire [7:0] grayPixel0;
+  wire [7:0] grayPixel1;
+
+  rgb565Grayscale gray0 (
+    .rgb565(s_pixelWord[15:0]),
+    .grayscale(grayPixel0)
+  );
+
+  rgb565Grayscale gray1 (
+    .rgb565(s_pixelWord[31:16]),
+    .grayscale(grayPixel1)
+  );
+
+  assign s_grayscalePixelWord = {grayPixel1[7:3],grayPixel1[7:2],grayPixel1[7:3],grayPixel0[7:3],grayPixel0[7:2],grayPixel0[7:3]}; // converting each 8-bit grayscale value into a 16-bit RGB565 pixel following the example in the assignment
+
   always @(posedge pclk)
     begin
       s_byte3Reg <= (s_pixelCountReg[1:0] == 2'b00 && hsync == 1'b1) ? camData : s_byte3Reg;
@@ -181,7 +199,7 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
                              .clock1(pclk),
                              .clock2(clock),
                              .writeEnable(s_weLineBuffer),
-                             .dataIn1(s_pixelWord),
+                             .dataIn1(s_grayscalePixelWord), // changed this that before was taking s_pixelWord 
                              .dataOut2(s_busPixelWord));
 
   /*
