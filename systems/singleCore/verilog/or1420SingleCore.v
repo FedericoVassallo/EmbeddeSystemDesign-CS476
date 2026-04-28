@@ -441,23 +441,22 @@ module or1420SingleCore ( input wire         clock12MHz,
               .done(s_ramDmaCiDone),
               .result(s_ramDmaCiResult),
               // Bus Arbiter Interface
-              .busRequests(s_ramDmaReqBus),
-              .busGrants(s_ramDmaAckBus),
+              .requestTransaction(s_ramDmaReqBus),
+              .transactionGranted(s_ramDmaAckBus),
               // Bus In Interface
-              .busIn_addressData(s_addressData),
-              .busIn_endTransaction(s_endTransaction),
-              .busIn_dataValid(s_dataValid),
-              .busIn_busy(s_busy),
-              .busIn_error(s_busError),
+              .addressDataIn(s_addressData),
+              .endTransactionIn(s_endTransaction),
+              .dataValidIn(s_dataValid),
+              .busyIn(s_busy),
+              .busErrorIn(s_busError),
               // Bus Out Interface
-              .busOut_addressData(s_ramDmaAddressData),
-              .busOut_byteEnables(s_ramDmaByteEnables),
-              .busOut_burstSize(s_ramDmaBurstSize),
-              .busOut_readNWrite(s_ramDmaReadNotWrite),
-              .busOut_beginTransaction(s_ramDmaBeginTransaction),
-              .busOut_endTransaction(s_ramDmaEndTransaction),
-              .busOut_dataValid(s_ramDmaDataValid),
-              .busOut_busy() // we can keep it empty since is nevere asserted
+              .addressDataOut(s_ramDmaAddressData),
+              .byteEnablesOut(s_ramDmaByteEnables),
+              .burstSizeOut(s_ramDmaBurstSize),
+              .readNotWriteOut(s_ramDmaReadNotWrite),
+              .beginTransactionOut(s_ramDmaBeginTransaction),
+              .endTransactionOut(s_ramDmaEndTransaction),
+              .dataValidOut(s_ramDmaDataValid),
               );
 
 
