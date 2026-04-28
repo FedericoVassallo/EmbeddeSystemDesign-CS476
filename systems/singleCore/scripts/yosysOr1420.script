@@ -58,4 +58,3 @@ read -sv ../../../modules/ramDmaCi/verilog/dualPortSSRAM.v
 read -sv ../../../modules/ramDmaCi/verilog/ramDmaCi.v
 read -sv ../verilog/or1420SingleCore.v
 synth_ecp5 -top or1420SingleCore -json or1420SingleCore.json
-
