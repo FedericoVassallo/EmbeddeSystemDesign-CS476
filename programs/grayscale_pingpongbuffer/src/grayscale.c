@@ -15,8 +15,8 @@ int main () {
   const uint32_t usedBurstSize = 15;
   // 
   const int iterations = 599; // we do 599 iterations
-  volatile uint16_t rgb565[640*480]    __attribute__((aligned(4)));
-  volatile uint8_t  grayscale[640*480] __attribute__((aligned(4)));
+  volatile uint16_t rgb565[640*480];
+  volatile uint8_t  grayscale[640*480]; 
   volatile uint32_t result, cycles,stall,idle;
   volatile uint32_t bufferA = 0;
   volatile uint32_t bufferB = 256;
