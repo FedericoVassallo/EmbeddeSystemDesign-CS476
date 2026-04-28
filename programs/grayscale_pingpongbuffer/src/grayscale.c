@@ -114,8 +114,12 @@ int main () {
      for (int j = 0; j < 256; j += 2) { // we do 216 because we can process 4 pixels at a time and we have 512 pixels in total, so we do 512/4 = 128 iterations
         asm volatile("l.nios_rrr %[out1],%[in1],r0,0x8" :[out1]"=r"(pixel1):[in1] "r"(bufferA + j)); // we read the first 2 pixels from the dmaCi memory in bufferA where we already transferred the first batch of rgb565 data
         asm volatile("l.nios_rrr %[out1],%[in1],r0,0x8" :[out1]"=r"(pixel2):[in1] "r"(bufferA + j + 1)); // we read the first 2 pixels from the dmaCi memory in bufferA where we already transferred the first batch of rgb565 data
+
+        pixel1 = swap_u32(pixel1);
+        pixel2 = swap_u32(pixel2);
+
         asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xC":[out1]"=r"(grayPixels):[in1]"r"(pixel1),[in2]"r"(pixel2)); // we send these 2 pixels to the grayscale custom instruction and we get back 4 grayscale pixels in grayPixels
-        asm volatile("l.nios_rrr r0,%[in1],%[in2],0x8" ::[in1] "r"(bufferA + (j/2) | writeBit), [in2]"r"(grayPixels)); // we write the 4 grayscale pixels back to the dmaCi memory in bufferA
+        asm volatile("l.nios_rrr r0,%[in1],%[in2],0x8" ::[in1] "r"(bufferA + (j/2) | writeBit), [in2]"r"(swap_u32(grayPixels))); // we write the 4 grayscale pixels back to the dmaCi memory in bufferA
       }
 
       // We now transfer the calculated grayscale pixels to the grayscale screen buffer with DMA
