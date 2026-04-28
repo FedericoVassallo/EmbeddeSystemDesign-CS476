@@ -11,9 +11,8 @@ int main () {
   const uint32_t blockSize = 3 << 10;
   const uint32_t burstSize = 4 << 10;
   const uint32_t statusControl = 5 << 10;
-  const uint32_t usedCiRamAddress = 50;
   const uint32_t usedBlocksize = 256;
-  const uint32_t usedBurstSize = 32;
+  const uint32_t usedBurstSize = 15;
   // 
   const int iterations = 599; // we do 599 iterations
   volatile uint16_t rgb565[640*480]    __attribute__((aligned(4)));
@@ -45,7 +44,6 @@ int main () {
     uint32_t * rgb = (uint32_t *) &rgb565[0];
     uint32_t * gray = (uint32_t *) &grayscale[0];
 
-    uint32_t current_pixel;
     uint32_t polling;
     uint32_t grayPixels;
     uint32_t pixel1, pixel2;
@@ -78,8 +76,12 @@ int main () {
      for (int j = 0; j < 256; j += 2) { 
         asm volatile("l.nios_rrr %[out1],%[in1],r0,0x8" :[out1]"=r"(pixel1):[in1] "r"(bufferA + j)); // we read the first 2 pixels from the dmaCi memory in bufferA where we already transferred the first batch of rgb565 data
         asm volatile("l.nios_rrr %[out1],%[in1],r0,0x8" :[out1]"=r"(pixel2):[in1] "r"(bufferA + j + 1)); // we read the first 2 pixels from the dmaCi memory in bufferA where we already transferred the first batch of rgb565 data
+
+        pixel1 = swap_u32(pixel1);
+        pixel2 = swap_u32(pixel2);
+
         asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xC":[out1]"=r"(grayPixels):[in1]"r"(pixel1),[in2]"r"(pixel2)); // we send these 2 pixels to the grayscale custom instruction and we get back 4 grayscale pixels in grayPixels
-        asm volatile("l.nios_rrr r0,%[in1],%[in2],0x8" ::[in1] "r"(bufferA + (j/2) | writeBit), [in2]"r"(grayPixels)); // we write the 4 grayscale pixels back to the dmaCi memory in bufferA
+        asm volatile("l.nios_rrr r0,%[in1],%[in2],0x8" ::[in1] "r"(bufferA + (j/2) | writeBit), [in2]"r"(swap_u32(grayPixels))); // we write the 4 grayscale pixels back to the dmaCi memory in bufferA
       }
 
       do { // we check that the DMA-transfer to the bufferB has finished

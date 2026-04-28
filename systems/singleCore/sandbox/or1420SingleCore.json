@@ -23,7 +23,7 @@
         }
       },
       "cells": {
-        "$specify$65564": {
+        "$specify$65565": {
           "hide_name": 1,
           "type": "$specify2",
           "parameters": {
@@ -310084,7 +310084,7 @@
             "cell_src": "../verilog/or1420SingleCore.v:433.34-460.16",
             "module": "$paramod\\ramDmaCi\\customId=8'00001000",
             "module_hdlname": "ramDmaCi",
-            "module_src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:1.1-229.10"
+            "module_src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:1.1-230.10"
           },
           "port_directions": {
           },
@@ -310103,7 +310103,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:16.100-16.154"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:16.100-16.154"
           },
           "port_directions": {
             "CLK": "input",
@@ -310131,7 +310131,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
           },
           "port_directions": {
             "CLK": "input",
@@ -310159,7 +310159,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
           },
           "port_directions": {
             "CLK": "input",
@@ -310187,7 +310187,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
           },
           "port_directions": {
             "CLK": "input",
@@ -310215,7 +310215,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
           },
           "port_directions": {
             "CLK": "input",
@@ -310243,7 +310243,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
           },
           "port_directions": {
             "CLK": "input",
@@ -310271,7 +310271,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
           },
           "port_directions": {
             "CLK": "input",
@@ -310299,7 +310299,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
           },
           "port_directions": {
             "CLK": "input",
@@ -310327,7 +310327,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
           },
           "port_directions": {
             "CLK": "input",
@@ -310379,7 +310379,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:16.100-16.154"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:16.100-16.154"
           },
           "port_directions": {
             "CLK": "input",
@@ -311270,7 +311270,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:68.164-68.215"
           },
           "port_directions": {
             "CLK": "input",
@@ -312189,7 +312189,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:88.171-88.230"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:88.171-88.230"
           },
           "port_directions": {
             "CE": "input",
@@ -312218,7 +312218,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312247,7 +312247,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312276,7 +312276,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312305,7 +312305,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312334,7 +312334,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312363,7 +312363,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312392,7 +312392,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312421,7 +312421,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312450,7 +312450,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312479,7 +312479,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312508,7 +312508,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312537,7 +312537,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312566,7 +312566,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312595,7 +312595,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312624,7 +312624,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312653,7 +312653,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312682,7 +312682,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312711,7 +312711,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312740,7 +312740,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312769,7 +312769,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312798,7 +312798,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312827,7 +312827,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312856,7 +312856,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312885,7 +312885,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312915,7 +312915,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:88.171-88.230"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:88.171-88.230"
           },
           "port_directions": {
             "CE": "input",
@@ -312944,7 +312944,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -312973,7 +312973,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -313002,7 +313002,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -313031,7 +313031,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -313060,7 +313060,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -313089,7 +313089,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -313468,7 +313468,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -313497,7 +313497,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -313526,7 +313526,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -313555,7 +313555,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -313584,7 +313584,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -313613,7 +313613,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -313642,7 +313642,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -313671,7 +313671,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -313700,7 +313700,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -313729,7 +313729,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -314109,7 +314109,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:146.3-152.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:83.170-83.229"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:147.3-153.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:83.170-83.229"
           },
           "port_directions": {
             "CE": "input",
@@ -315148,7 +315148,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315177,7 +315177,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315206,7 +315206,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315235,7 +315235,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315264,7 +315264,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315293,7 +315293,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315322,7 +315322,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315351,7 +315351,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315380,7 +315380,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315409,7 +315409,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315438,7 +315438,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315467,7 +315467,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315496,7 +315496,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315525,7 +315525,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315554,7 +315554,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315583,7 +315583,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315612,7 +315612,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315641,7 +315641,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315670,7 +315670,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315699,7 +315699,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315728,7 +315728,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315757,7 +315757,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315786,7 +315786,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315815,7 +315815,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315844,7 +315844,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315873,7 +315873,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315902,7 +315902,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315931,7 +315931,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315960,7 +315960,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -315989,7 +315989,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -316117,7 +316117,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -316209,7 +316209,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -316276,7 +316276,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -316368,7 +316368,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -316485,7 +316485,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -316602,7 +316602,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -316719,7 +316719,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -316811,7 +316811,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -316878,7 +316878,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -316995,7 +316995,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -317062,7 +317062,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -317154,7 +317154,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -317221,7 +317221,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -317313,7 +317313,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -317355,7 +317355,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -317398,7 +317398,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:36.102-36.164"
           },
           "port_directions": {
             "CE": "input",
@@ -318520,7 +318520,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:146.3-152.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:147.3-153.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -319246,7 +319246,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -319275,7 +319275,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -319304,7 +319304,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -319333,7 +319333,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -319362,7 +319362,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -319391,7 +319391,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -319420,7 +319420,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -319449,7 +319449,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -319478,7 +319478,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:169.3-177.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:170.3-178.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -319556,7 +319556,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:176.92-176.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:177.92-177.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -319648,7 +319648,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:176.92-176.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:177.92-177.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -319740,7 +319740,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:176.92-176.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:177.92-177.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -319832,7 +319832,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:176.92-176.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:177.92-177.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -319899,7 +319899,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:176.92-176.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:177.92-177.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -320331,7 +320331,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:174.92-174.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:175.92-175.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -320423,7 +320423,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:174.92-174.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:175.92-175.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -320465,7 +320465,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:174.92-174.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:175.92-175.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -320632,7 +320632,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:174.92-174.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:175.92-175.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -320749,7 +320749,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:174.92-174.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:175.92-175.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -320891,7 +320891,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:188.33-188.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:189.33-189.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -320933,7 +320933,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:186.31-186.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:187.31-187.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -320975,7 +320975,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:186.31-186.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:187.31-187.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -321017,7 +321017,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:186.31-186.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:187.31-187.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -321059,7 +321059,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:186.31-186.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:187.31-187.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -321101,7 +321101,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:186.31-186.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:187.31-187.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -321143,7 +321143,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:188.33-188.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:189.33-189.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -321185,7 +321185,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:188.33-188.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:189.33-189.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -321227,7 +321227,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:188.33-188.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:189.33-189.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -321269,7 +321269,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:188.33-188.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:189.33-189.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -321338,7 +321338,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:83.170-83.229"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:83.170-83.229"
           },
           "port_directions": {
             "CE": "input",
@@ -321367,7 +321367,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -321396,7 +321396,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -321425,7 +321425,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -321454,7 +321454,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -321483,7 +321483,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -321512,7 +321512,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -321541,7 +321541,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -321570,7 +321570,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:194.3-207.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:195.3-208.8|/opt/oss-cad-suite/lib/../share/yosys/lattice/cells_map_trellis.v:56.101-56.163"
           },
           "port_directions": {
             "CE": "input",
@@ -321623,7 +321623,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:204.55-204.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:205.55-205.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -321665,7 +321665,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:204.55-204.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:205.55-205.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -321707,7 +321707,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:204.55-204.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:205.55-205.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -321749,7 +321749,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:204.55-204.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:205.55-205.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -321966,7 +321966,7 @@
           },
           "attributes": {
             "module_not_derived": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:204.55-204.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:205.55-205.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4"
           },
           "port_directions": {
             "A0": "input",
@@ -436988,7 +436988,7 @@
           "bits": [ 5653, 5674, 5712, 5577, 5724, 5739, 5669, 5748, 5775, 5534, 5767, 5415, 5431, 5443, 5795, 5452, 5469, 5481, 5615, 5490, 5789, 5504, 5514, 5527, 5551, 5568, 5691, 5705, 5592, 5602, 5631, 5642 ],
           "attributes": {
             "hdlname": "ram_dma_controller s_addressDataOutReg",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:185.14-185.33"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:186.14-186.33"
           }
         },
         "ram_dma_controller.s_addressDataOutReg_TRELLIS_FF_Q_9_DI": {
@@ -437023,7 +437023,7 @@
           "bits": [ 11210, 13264, 13254, 11219, 11218, 11217, 11216, 11215, 11214, 11213 ],
           "attributes": {
             "hdlname": "ram_dma_controller s_blockSizeShadowReg",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:160.13-160.33"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:161.13-161.33"
           }
         },
         "ram_dma_controller.s_busErrorReg": {
@@ -437115,7 +437115,7 @@
           "bits": [ "x", "x", 13324, 13280, 13282, 13304, 13326, 13328, 13330, 13332, 13334, 13336, 13338, 13284, 13286, 13288, 13290, 13292, 13294, 13296, 13298, 13300, 13302, 13306, 13308, 13310, 13312, 13314, 13316, 13318, 13320, 13322 ],
           "attributes": {
             "hdlname": "ram_dma_controller s_busStartAddressShadowReg",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:159.13-159.39"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:160.13-160.39"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI": {
@@ -437146,7 +437146,7 @@
           "bits": [ 13344 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI_LUT4_Z_12_D": {
@@ -437170,7 +437170,7 @@
           "bits": [ 13347 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI_LUT4_Z_14_D": {
@@ -437186,7 +437186,7 @@
           "bits": [ 13349 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI_LUT4_Z_15_D": {
@@ -437210,7 +437210,7 @@
           "bits": [ 13354 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI_LUT4_Z_17_D": {
@@ -437250,7 +437250,7 @@
           "bits": [ 13358 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI_LUT4_Z_1_D_CCU2C_S1_S0": {
@@ -437281,7 +437281,7 @@
           "bits": [ 13363 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI_LUT4_Z_22_D": {
@@ -437313,7 +437313,7 @@
           "bits": [ 13367 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI_LUT4_Z_25_D": {
@@ -437337,7 +437337,7 @@
           "bits": [ 13369 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13",
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13",
             "unused_bits": "0 "
           }
         },
@@ -437354,7 +437354,7 @@
           "bits": [ 13372 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI_LUT4_Z_28_D": {
@@ -437386,7 +437386,7 @@
           "bits": [ 13375 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI_LUT4_Z_4_D": {
@@ -437402,7 +437402,7 @@
           "bits": [ 13377 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI_LUT4_Z_5_D": {
@@ -437426,7 +437426,7 @@
           "bits": [ 13362 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI_LUT4_Z_7_D": {
@@ -437442,7 +437442,7 @@
           "bits": [ 13381 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI_LUT4_Z_8_D": {
@@ -437466,7 +437466,7 @@
           "bits": [ 13343 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_busStartAddressShadowReg_TRELLIS_FF_Q_DI_LUT4_Z_D": {
@@ -437482,7 +437482,7 @@
           "bits": [ 13353 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:172.92-172.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:173.92-173.126|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_dataOutValidReg": {
@@ -437490,7 +437490,7 @@
           "bits": [ 13384 ],
           "attributes": {
             "hdlname": "ram_dma_controller s_dataOutValidReg",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:184.14-184.31"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:185.14-185.31"
           }
         },
         "ram_dma_controller.s_dataOutValidReg_TRELLIS_FF_Q_CE": {
@@ -437543,7 +437543,7 @@
           "bits": [ 13212 ],
           "attributes": {
             "hdlname": "ram_dma_controller s_doBusWrite",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:161.8-161.20"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:162.8-162.20"
           }
         },
         "ram_dma_controller.s_endTransactionInReg": {
@@ -437627,7 +437627,7 @@
           "bits": [ 16497, 16498, 16499, 16500, 16501, 16502, 16503, 16504, 16505, "0" ],
           "attributes": {
             "hdlname": "ram_dma_controller s_maxBurstSize",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:186.14-186.28",
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:187.14-187.28",
             "unused_bits": "0 1 2 3 4 5 6 7 8"
           }
         },
@@ -437672,7 +437672,7 @@
           "bits": [ 13412 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:176.92-176.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:177.92-177.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_ramCiAddressReg_TRELLIS_FF_Q_DI_LUT4_Z_1_D_CCU2C_S1_S0": {
@@ -437703,7 +437703,7 @@
           "bits": [ 13416 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:176.92-176.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:177.92-177.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_ramCiAddressReg_TRELLIS_FF_Q_DI_LUT4_Z_4_D": {
@@ -437727,7 +437727,7 @@
           "bits": [ 13419 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:176.92-176.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:177.92-177.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_ramCiAddressReg_TRELLIS_FF_Q_DI_LUT4_Z_6_D": {
@@ -437751,7 +437751,7 @@
           "bits": [ 13422 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:176.92-176.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:177.92-177.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_ramCiAddressReg_TRELLIS_FF_Q_DI_LUT4_Z_D": {
@@ -437767,7 +437767,7 @@
           "bits": [ 13423 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:176.92-176.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13",
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:177.92-177.116|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13",
             "unused_bits": "0 "
           }
         },
@@ -437807,7 +437807,7 @@
           "bits": [ 13115, 13113, 13121, 13120, 13119, 13118, 13117, 13116 ],
           "attributes": {
             "hdlname": "ram_dma_controller s_usedBurstSize",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:188.14-188.29"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:189.14-189.29"
           }
         },
         "ram_dma_controller.s_usedBurstSizeReg": {
@@ -437845,7 +437845,7 @@
           "bits": [ 13430 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:174.92-174.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:175.92-175.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_usedBurstSize_LUT4_Z_2_C_CCU2C_S1_S0": {
@@ -437868,7 +437868,7 @@
           "bits": [ 13434 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:174.92-174.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:175.92-175.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_usedBurstSize_LUT4_Z_3_C_CCU2C_S1_COUT_CCU2C_CIN_COUT": {
@@ -437876,7 +437876,7 @@
           "bits": [ 13435 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:174.92-174.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13",
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:175.92-175.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13",
             "unused_bits": "0 "
           }
         },
@@ -437917,7 +437917,7 @@
           "bits": [ 13433 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:174.92-174.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:175.92-175.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_usedBurstSize_LUT4_Z_7_C": {
@@ -437941,7 +437941,7 @@
           "bits": [ 13440 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:174.92-174.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:175.92-175.120|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_usedBurstSize_LUT4_Z_C_LUT4_D_Z": {
@@ -437955,7 +437955,7 @@
           "bits": [ 13427 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:188.33-188.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:189.33-189.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_usedBurstSize_LUT4_Z_D_CCU2C_COUT_B0": {
@@ -437969,7 +437969,7 @@
           "bits": [ 13446 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:186.31-186.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:187.31-187.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_usedBurstSize_LUT4_Z_D_CCU2C_COUT_B0_CCU2C_S0_CIN_CCU2C_COUT_CIN": {
@@ -437977,7 +437977,7 @@
           "bits": [ 13449 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:186.31-186.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:187.31-187.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_usedBurstSize_LUT4_Z_D_CCU2C_COUT_B0_CCU2C_S0_CIN_CCU2C_COUT_CIN_CCU2C_COUT_CIN": {
@@ -437985,7 +437985,7 @@
           "bits": [ 13452 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:186.31-186.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:187.31-187.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_usedBurstSize_LUT4_Z_D_CCU2C_COUT_B0_CCU2C_S0_CIN_CCU2C_COUT_CIN_CCU2C_COUT_CIN_CCU2C_COUT_CIN": {
@@ -437993,7 +437993,7 @@
           "bits": [ 13455 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:186.31-186.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:187.31-187.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_usedBurstSize_LUT4_Z_D_CCU2C_COUT_B0_CCU2C_S0_CIN_CCU2C_COUT_CIN_CCU2C_COUT_CIN_CCU2C_COUT_CIN_CCU2C_COUT_S0": {
@@ -438008,7 +438008,7 @@
           "bits": [ 13447 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:186.31-186.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13",
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:187.31-187.64|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13",
             "unused_bits": "0 "
           }
         },
@@ -438024,7 +438024,7 @@
           "bits": [ 13443 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:188.33-188.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:189.33-189.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_usedBurstSize_LUT4_Z_D_CCU2C_COUT_CIN_CCU2C_COUT_B0": {
@@ -438044,7 +438044,7 @@
           "bits": [ 13460 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:188.33-188.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:189.33-189.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_usedBurstSize_LUT4_Z_D_CCU2C_COUT_CIN_CCU2C_COUT_CIN_CCU2C_COUT_B0": {
@@ -438064,7 +438064,7 @@
           "bits": [ 13463 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:188.33-188.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:189.33-189.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_usedBurstSize_LUT4_Z_D_CCU2C_COUT_CIN_CCU2C_COUT_CIN_CCU2C_COUT_CIN_CCU2C_COUT_B0": {
@@ -438084,7 +438084,7 @@
           "bits": [ 13466 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:188.33-188.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:189.33-189.70|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_usedBurstSize_LUT4_Z_D_CCU2C_COUT_CIN_CCU2C_COUT_CIN_CCU2C_COUT_CIN_CCU2C_COUT_CIN_CCU2C_COUT_B0": {
@@ -438188,7 +438188,7 @@
           "bits": [ 16506, 16507, 16508, 16509, 16510, 16511, 16512, 16513, 13472 ],
           "attributes": {
             "force_downto": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:204.55-204.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:34.26-34.27",
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:205.55-205.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:34.26-34.27",
             "unused_bits": "0 1 2 3 4 5 6 7"
           }
         },
@@ -438197,7 +438197,7 @@
           "bits": [ 13490 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:204.55-204.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:205.55-205.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_wordsWrittenReg_TRELLIS_FF_Q_DI_CCU2C_S0_CIN_CCU2C_COUT_CIN": {
@@ -438205,7 +438205,7 @@
           "bits": [ 13493 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:204.55-204.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:205.55-205.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_wordsWrittenReg_TRELLIS_FF_Q_DI_CCU2C_S0_CIN_CCU2C_COUT_CIN_CCU2C_COUT_CIN": {
@@ -438213,7 +438213,7 @@
           "bits": [ 13496 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:204.55-204.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:205.55-205.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_wordsWrittenReg_TRELLIS_FF_Q_DI_CCU2C_S0_CIN_CCU2C_COUT_CIN_CCU2C_COUT_S0": {
@@ -438275,7 +438275,7 @@
           "bits": [ 13499 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:204.55-204.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:205.55-205.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13"
           }
         },
         "ram_dma_controller.s_wordsWrittenReg_TRELLIS_FF_Q_DI_CCU2C_S0_CIN_CCU2C_COUT_S0_LUT4_C_Z_LUT4_Z_C_CCU2C_S1_S0": {
@@ -438298,7 +438298,7 @@
           "bits": [ 13491 ],
           "attributes": {
             "abc9_carry": "00000000000000000000000000000001",
-            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:204.55-204.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13",
+            "src": "../../../modules/ramDmaCi/verilog/ramDmaCi.v:205.55-205.79|/opt/oss-cad-suite/lib/../share/yosys/lattice/arith_map_ccu2c.v:74.7-80.4|/opt/oss-cad-suite/lib/../share/yosys/lattice/ccu2c_sim.vh:9.9-9.13",
             "unused_bits": "0 "
           }
         },

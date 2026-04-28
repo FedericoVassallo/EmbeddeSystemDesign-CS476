@@ -140,6 +140,7 @@ module ramDmaCi #( parameter [7:0] customId = 8'h00 )
       DO_WRITE              : s_dmaNextState <= (busErrorIn == 1'b1) ? END_TRANSACTION_ERROR :
                                                 (s_wordsWrittenReg[8] == 1'b1 && busyIn == 1'b0) ? END_WRITE_TRANSACTION : DO_WRITE;
       END_WRITE_TRANSACTION : s_dmaNextState <= (s_dmaDone == 1'b1) ? IDLE : REQUEST_BUS;
+      END_TRANSACTION_ERROR : s_dmaNextState <= IDLE;
       default               : s_dmaNextState <= IDLE;
     endcase
   
