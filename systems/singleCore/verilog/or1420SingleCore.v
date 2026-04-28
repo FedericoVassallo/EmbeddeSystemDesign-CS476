@@ -420,6 +420,8 @@ module or1420SingleCore ( input wire         clock12MHz,
   wire [7:0]  s_ramDmaBurstSize;
   wire        s_ramDmaReadNotWrite;
   wire        s_ramDmaBeginTransaction;
+  wire        s_ramDmaEndTransaction;
+  wire        s_ramDmaDataValid;
 
   // the bus request is connected to s_busRequests[27] with the others connection later in the code
   // using the lines assign s_busRequests[27]   = s_ramDmaReqBus;
@@ -446,12 +448,15 @@ module or1420SingleCore ( input wire         clock12MHz,
               .endTransactionIn(s_endTransaction),
               .dataValidIn(s_dataValid),
               .busErrorIn(s_busError),
+              .busyIn(s_busy),
               // Bus Out Interface
               .addressDataOut(s_ramDmaAddressData),
               .byteEnablesOut(s_ramDmaByteEnables),
               .burstSizeOut(s_ramDmaBurstSize),
               .readNotWriteOut(s_ramDmaReadNotWrite),
-              .beginTransactionOut(s_ramDmaBeginTransaction)
+              .beginTransactionOut(s_ramDmaBeginTransaction),
+              .endTransactionOut(s_ramDmaEndTransaction),
+              .dataValidOut(s_ramDmaDataValid)
               );
 
 
@@ -736,13 +741,13 @@ module or1420SingleCore ( input wire         clock12MHz,
  assign s_busError         = s_arbBusError | s_biosBusError | s_uartBusError | s_sdramBusError | s_flashBusError;
  assign s_beginTransaction = s_cpu1BeginTransaction | s_hdmiBeginTransaction | s_camBeginTransaction | s_ramDmaBeginTransaction;
  assign s_endTransaction   = s_cpu1EndTransaction | s_arbEndTransaction | s_biosEndTransaction | s_uartEndTransaction |
-                             s_sdramEndTransaction | s_hdmiEndTransaction | s_flashEndTransaction | s_camEndTransaction;
+                             s_sdramEndTransaction | s_hdmiEndTransaction | s_flashEndTransaction | s_camEndTransaction | s_ramDmaEndTransaction;
  assign s_addressData      = s_cpu1AddressData | s_biosAddressData | s_uartAddressData | s_sdramAddressData | s_hdmiAddressData |
                              s_flashAddressData | s_camAddressData | s_ramDmaAddressData;
  assign s_byteEnables      = s_cpu1byteEnables | s_hdmiByteEnables | s_camByteEnables | s_ramDmaByteEnables;
  assign s_readNotWrite     = s_cpu1ReadNotWrite | s_hdmiReadNotWrite | s_ramDmaReadNotWrite;
  assign s_dataValid        = s_cpu1DataValid | s_biosDataValid | s_uartDataValid | s_sdramDataValid | s_hdmiDataValid | 
-                             s_flashDataValid | s_camDataValid;
+                             s_flashDataValid | s_camDataValid | s_ramDmaDataValid;
  assign s_busy             = s_sdramBusy;
  assign s_burstSize        = s_cpu1BurstSize | s_hdmiBurstSize | s_camBurstSize | s_ramDmaBurstSize;
  
