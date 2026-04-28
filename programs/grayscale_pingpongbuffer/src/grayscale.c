@@ -16,8 +16,8 @@ int main () {
   const uint32_t usedBurstSize = 32;
   // 
   const int iterations = 599; // we do 599 iterations
-volatile uint16_t rgb565[640*480]    __attribute__((aligned(4)));
-volatile uint8_t  grayscale[640*480] __attribute__((aligned(4)));
+  volatile uint16_t rgb565[640*480]    __attribute__((aligned(4)));
+  volatile uint8_t  grayscale[640*480] __attribute__((aligned(4)));
   volatile uint32_t result, cycles,stall,idle;
   volatile uint32_t bufferA = 0;
   volatile uint32_t bufferB = 256;
@@ -70,6 +70,8 @@ volatile uint8_t  grayscale[640*480] __attribute__((aligned(4)));
     for (int i = 1; i <= iterations; i++) {
       asm volatile("l.nios_rrr r0,%[in1],%[in2],0x8" ::[in1] "r"(busStartAddress | writeBit),[in2] "r"(rgb + (i * 256))); // we set the bus start address to the address of the rgb565 buffer
       asm volatile("l.nios_rrr r0,%[in1],%[in2],0x8" ::[in1] "r"(memoryStartAddress | writeBit),[in2] "r"(bufferB)); // we set the memory start address to the address of the first 1kbyte of the dmaCi memory
+      asm volatile("l.nios_rrr r0,%[in1],%[in2],0x8" ::[in1] "r"(blockSize | writeBit),[in2] "r"(usedBlocksize)); // reset blockSize to 256 words (was changed to 128 by the grayscale DMA)
+      asm volatile("l.nios_rrr r0,%[in1],%[in2],0x8" ::[in1] "r"(burstSize | writeBit),[in2] "r"(usedBurstSize)); // reset burstSize to 32
       asm volatile("l.nios_rrr r0,%[in1],%[in2],0x8" ::[in1] "r"(statusControl | writeBit),[in2] "r"(1)); // we start the dma transfer from memory to ciRam by writing 1 to the control register
 
      // we we calculate the grayscale values in the buffer that contains already the RGB565-pixels, and we "overwrite" them with the grayscale pixels
