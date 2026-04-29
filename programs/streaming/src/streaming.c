@@ -6,7 +6,6 @@
 // #define __RGB565__
 // commented the define for tast 3 
 
-
 int main () {
   const uint8_t sevenSeg[10] = {0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F};
   volatile uint16_t rgb565[640*480];
