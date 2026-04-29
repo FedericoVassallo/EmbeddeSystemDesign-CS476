@@ -92,7 +92,7 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
   
   always @(posedge clock)
     begin
-      s_frameBufferBaseReg   <= (reset == 1'b1) ? 32'd0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd5) ? {ciValueB[31:2],2'd0} : s_frameBufferBaseReg;
+      s_frameBufferBaseReg   <= (reset == 1'b1) ? 32'd0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd5) ? {ciValueB[31:2],2'd0} : s_frameBufferBaseReg; // we set the base frame address where we will write later the pixel data (called in streaming.c)
       s_grabberActiveReg     <= (reset == 1'b1) ? 1'b0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd6) ? ciValueB[0]& ~ciValueB[1] : s_grabberActiveReg;
       s_grabberSingleShotReg <= (reset == 1'b1 || s_singleShotActionReg[0] == 1'b1) ? 1'b0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd6) ? ciValueB[1]& ~ciValueB[0] : s_grabberSingleShotReg;
     end
@@ -174,6 +174,8 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
 
   wire [7:0] grayPixel0;
   wire [7:0] grayPixel1;
+  reg [7:0] grayPixel0Reg;
+  reg [7:0] grayPixel1Reg;
 
   rgb565Grayscale gray0 (
     .rgb565(s_pixelWord[15:0]),
@@ -185,13 +187,16 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
     .grayscale(grayPixel1)
   );
 
-  assign s_grayscalePixelWord = {grayPixel1[7:3],grayPixel1[7:2],grayPixel1[7:3],grayPixel0[7:3],grayPixel0[7:2],grayPixel0[7:3]}; // converting each 8-bit grayscale value into a 16-bit RGB565 pixel following the example in the assignment
+  assign s_grayscalePixelWord = {grayPixel1Reg, grayPixel0Reg, grayPixel1, grayPixel0}; // we assign the grayscale pixel word to contain the four grayscale pixels
 
   always @(posedge pclk)
     begin
       s_byte3Reg <= (s_pixelCountReg[1:0] == 2'b00 && hsync == 1'b1) ? camData : s_byte3Reg;
       s_byte2Reg <= (s_pixelCountReg[1:0] == 2'b01 && hsync == 1'b1) ? camData : s_byte2Reg;
       s_byte1Reg <= (s_pixelCountReg[1:0] == 2'b10 && hsync == 1'b1) ? camData : s_byte1Reg;
+
+      grayPixel0Reg <= (s_pixelCountReg[1:0] == 2'b00 && hsync == 1'b1) ? grayPixel0 : grayPixel0Reg;
+      grayPixel1Reg <= (s_pixelCountReg[1:0] == 2'b00 && hsync == 1'b1) ? grayPixel1 : grayPixel1Reg;
     end
   
   dualPortRam2k lineBuffer ( .address1(s_pixelCountReg[10:2]),
