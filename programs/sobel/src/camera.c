@@ -12,12 +12,18 @@ volatile uint16_t rgb565[640*480];
 volatile uint8_t grayscale[640*480];
 // volatile uint8_t floyd[640*480];
 // volatile int16_t error_array[642<<1];
-volatile uint8_t sobelResult[640*480]; // added output buffer for Sobel
+volatile uint8_t sobelA[640*480];   // edge map, buffer A
+volatile uint8_t sobelB[640*480];   // edge map, buffer B
+volatile uint8_t motion[640*480];   // motion result, that will be shown in HDMI
 
 int main () {
   volatile int result;
   volatile unsigned int *vga = (unsigned int *) 0X50000020;
   camParameters camParams;
+
+  volatile uint8_t *sobelCurr = sobelA;   // where this frame's edges go
+  volatile uint8_t *sobelPrev = sobelB;   // last frame's edges
+
 #ifdef __OR1300__
   icache_write_cfg(CACHE_SIZE_8K|CACHE_FOUR_WAY|CACHE_REPLACE_LRU);
   dcache_write_cfg(CACHE_SIZE_8K|CACHE_FOUR_WAY|CACHE_WRITE_BACK|CACHE_REPLACE_PLRU);
@@ -37,9 +43,10 @@ int main () {
   vga[1] = swap_u32(result);
   printf("PCLK (kHz) : %d\n", camParams.pixelClockInkHz );
   printf("FPS        : %d\n", camParams.framesPerSecond );
+  for (int i = 0; i < 640*480; i++) { sobelA[i] = 0; sobelB[i] = 0; } // clear buffers
     while(1) {
     vga[2] = swap_u32(2); // 2 to set grayscale
-    vga[3] = swap_u32((uint32_t) &sobelResult[0]); // tell HDMI which buffer to display
+    vga[3] = swap_u32((uint32_t) &motion[0]); // tell HDMI which buffer to display
     takeSingleImageBlocking((uint32_t) &rgb565[0]);
     for (int line = 0; line < camParams.nrOfLinesPerImage; line++) {
       for (int pixel = 0; pixel < camParams.nrOfPixelsPerLine; pixel++) {
@@ -51,6 +58,18 @@ int main () {
         grayscale[line*camParams.nrOfPixelsPerLine+pixel] = gray;
       }
     }
-    edgeDetection(grayscale, sobelResult, camParams.nrOfPixelsPerLine, camParams.nrOfLinesPerImage, 128); // output buffer is sobelResult
+    edgeDetection(grayscale, sobelCurr, camParams.nrOfPixelsPerLine, camParams.nrOfLinesPerImage, 128); // output buffer is sobelCurr
+    // motion detection we see the difference from the previous frame
+    int totalPixels = camParams.nrOfPixelsPerLine * camParams.nrOfLinesPerImage;
+    for (int i = 0; i < totalPixels; i++) {
+      int diff = (int)sobelCurr[i] - (int)sobelPrev[i];
+      if (diff < 0) diff = -diff;
+      motion[i] = (diff > 0) ? 255 : 0;
+    }
+
+    // we swap the two pointers
+    volatile uint8_t *temp = sobelPrev;
+    sobelPrev = sobelCurr;
+    sobelCurr = temp;
   }
 }
