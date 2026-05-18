@@ -66,7 +66,7 @@ int main () {
     int totalPixels = camParams.nrOfPixelsPerLine * camParams.nrOfLinesPerImage;
     for (int i = 0; i < totalPixels; i++) {
       int diff = (int)sobelCurr[i] - (int)sobelPrev[i];
-      // if (diff < 0) diff = -diff; this is commented for new we have to decide if we want to show both edges or only the new one
+      if (diff < 0) diff = -diff; // this is commented for new we have to decide if we want to show both edges or only the new one
       motion[i] = (diff > 0) ? 255 : 0;
     }
 
