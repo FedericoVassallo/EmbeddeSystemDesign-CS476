@@ -15,7 +15,6 @@ volatile uint8_t grayscale[640*480];
 volatile uint8_t sobelA[640*480];   // edge map, buffer A
 volatile uint8_t sobelB[640*480];   // edge map, buffer B
 volatile uint8_t motion[640*480];   // motion result, that will be shown in HDMI
-volatile uint8_t temp_motion[640*480];   // this is used to store the motion result of the current frame before we decide if we want to show it or not
 
 int main () {
   volatile int result;
@@ -65,23 +64,10 @@ int main () {
     edgeDetection(grayscale, sobelCurr, camParams.nrOfPixelsPerLine, camParams.nrOfLinesPerImage, 128); // output buffer is sobelCurr
     // motion detection we see the difference from the previous frame
     int totalPixels = camParams.nrOfPixelsPerLine * camParams.nrOfLinesPerImage;
-    int motionGate = totalPixels / 100; // 1% of pixels
-    if (motionGate < 1) motionGate = 1;
-    int changed = 0;
     for (int i = 0; i < totalPixels; i++) {
       int diff = (int)sobelCurr[i] - (int)sobelPrev[i];
       if (diff < 0) diff = -diff; // this is commented for new we have to decide if we want to show both edges or only the new one
-      if (diff > 0) changed++;
-      temp_motion[i] = (diff > 0) ? 255 : 0;
-    }
-    if (changed > motionGate) {
-      for (int i = 0; i < totalPixels; i++) {
-        motion[i] = temp_motion[i];
-      }
-    } else {
-      for (int i = 0; i < totalPixels; i++) {
-        motion[i] = 0;
-      }
+      motion[i] = (diff > 0) ? 255 : 0;
     }
 
     // we swap the two pointers
