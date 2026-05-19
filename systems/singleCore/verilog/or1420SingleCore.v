@@ -48,8 +48,8 @@ module or1420SingleCore ( input wire         clock12MHz,
                            );
 
   wire        s_busIdle, s_snoopableBurst;
-  wire        s_hdmiDone, s_systemClock, s_systemClockX2, s_swapByteDone, s_flashDone, s_cpuFreqDone, s_grayscaleDone, s_ramDmaCiDone;
-  wire [31:0] s_hdmiResult, s_swapByteResult, s_flashResult, s_cpuFreqResult, s_grayscaleResult, s_ramDmaCiResult;
+  wire        s_hdmiDone, s_systemClock, s_systemClockX2, s_swapByteDone, s_flashDone, s_cpuFreqDone, s_grayscaleDone, s_ramDmaCiDone, s_accSobelDone;
+  wire [31:0] s_hdmiResult, s_swapByteResult, s_flashResult, s_cpuFreqResult, s_grayscaleResult, s_ramDmaCiResult, s_accSobelResult;
   wire [5:0]  s_memoryDistance = 6'd0;
   wire        s_busError, s_beginTransaction, s_endTransaction;
   wire [31:0] s_addressData;
@@ -332,8 +332,8 @@ module or1420SingleCore ( input wire         clock12MHz,
   wire [7:0]  s_cpu1BurstSize;
   wire        s_spm1Irq, s_stall;
   
-  assign s_cpu1CiDone = s_hdmiDone | s_swapByteDone | s_flashDone | s_cpuFreqDone | s_i2cCiDone | s_delayCiDone | s_camCiDone | s_profileCiDone | s_grayscaleDone | s_ramDmaCiDone | s_sobelCiDone;
-  assign s_cpu1CiResult = s_hdmiResult | s_swapByteResult | s_flashResult | s_cpuFreqResult | s_i2cCiResult | s_camCiResult | s_delayResult | s_profileCiResult | s_grayscaleResult | s_ramDmaCiResult | s_sobelCiResult; 
+  assign s_cpu1CiDone = s_hdmiDone | s_swapByteDone | s_flashDone | s_cpuFreqDone | s_i2cCiDone | s_delayCiDone | s_camCiDone | s_profileCiDone | s_grayscaleDone | s_ramDmaCiDone | s_sobelCiDone | s_accSobelDone;
+  assign s_cpu1CiResult = s_hdmiResult | s_swapByteResult | s_flashResult | s_cpuFreqResult | s_i2cCiResult | s_camCiResult | s_delayResult | s_profileCiResult | s_grayscaleResult | s_ramDmaCiResult | s_sobelCiResult | s_accSobelResult;
 
   or1420Top #( .NOP_INSTRUCTION(32'h1500FFFF)) cpu1
              (.cpuClock(s_systemClock),
@@ -481,6 +481,62 @@ module or1420SingleCore ( input wire         clock12MHz,
       .done(s_sobelCiDone),
       .result(s_sobelCiResult)
   );
+
+   /*
+   *
+   * Here we define a the accelerator for sobel 
+   *
+   *
+   */
+
+  // Bus arbiter wires for Sobel accelerator
+  wire        s_accSobelReqBus;
+  wire        s_accSobelAckBus;
+
+  // Bus output wires from Sobel accelerator
+  wire [31:0] s_accSobelAddressData;
+  wire [3:0]  s_accSobelByteEnables;
+  wire [7:0]  s_accSobelBurstSize;
+  wire        s_accSobelReadNotWrite;
+  wire        s_accSobelBeginTransaction;
+  wire        s_accSobelEndTransaction;
+  wire        s_accSobelDataValid;
+
+  accSobel #(
+    .customId(8'h0E),
+    .IMG_WIDTH(640),
+    .IMG_HEIGHT(480)
+) acc_sobel_inst (
+    .start(s_cpu1CiStart),
+    .clock(s_systemClock),
+    .reset(s_cpuReset),
+
+    .valueA(s_cpu1CiDataA),
+    .valueB(s_cpu1CiDataB),
+    .ciN(s_cpu1CiN),
+
+    .done(s_accSobelDone),
+    .result(s_accSobelResult),
+
+    // bus-master request/grant interface
+    .requestTransaction(s_accSobelReqBus),
+    .transactionGranted(s_accSobelAckBus),
+
+    // bus input side
+    .endTransactionIn(s_endTransaction),
+    .dataValidIn(s_dataValid),
+    .busErrorIn(s_busError),
+    .busyIn(s_busy),
+    .addressDataIn(s_addressData),
+
+    // bus output side
+    .beginTransactionOut(s_accSobelBeginTransaction),
+    .readNotWriteOut(s_accSobelReadNotWrite),
+    .endTransactionOut(s_accSobelEndTransaction),
+    .dataValidOut(s_accSobelDataValid),
+    .byteEnablesOut(s_accSobelByteEnables),
+    .burstSizeOut(s_accSobelBurstSize),
+    .addressDataOut(s_accSobelAddressData));
 
   /*
    *
@@ -733,13 +789,15 @@ module or1420SingleCore ( input wire         clock12MHz,
  assign s_busRequests[29] = s_hdmiRequestBus;
  assign s_busRequests[28] = s_camReqBus;
  assign s_busRequests[27] = s_ramDmaReqBus;
- assign s_busRequests[26:0] = 27'd0;
+ assign s_busRequests[26] = s_accSobelReqBus; //added bus request for sobel
+ assign s_busRequests[25:0] = 26'd0;
  
  assign s_cpu1DcacheBusAccessGranted = s_busGrants[31];
  assign s_cpu1IcacheBusAccessGranted = s_busGrants[30];
  assign s_hdmiBusgranted             = s_busGrants[29];
  assign s_camAckBus                  = s_busGrants[28];
  assign s_ramDmaAckBus               = s_busGrants[27];
+ assign s_accSobelAckBus             = s_busGrants[26];
 
  busArbiter arbiter ( .clock(s_systemClock),
                       .reset(s_reset),
@@ -761,16 +819,16 @@ module or1420SingleCore ( input wire         clock12MHz,
    *
    */
  assign s_busError         = s_arbBusError | s_biosBusError | s_uartBusError | s_sdramBusError | s_flashBusError;
- assign s_beginTransaction = s_cpu1BeginTransaction | s_hdmiBeginTransaction | s_camBeginTransaction | s_ramDmaBeginTransaction;
+ assign s_beginTransaction = s_cpu1BeginTransaction | s_hdmiBeginTransaction | s_camBeginTransaction | s_ramDmaBeginTransaction | s_accSobelBeginTransaction;
  assign s_endTransaction   = s_cpu1EndTransaction | s_arbEndTransaction | s_biosEndTransaction | s_uartEndTransaction |
-                             s_sdramEndTransaction | s_hdmiEndTransaction | s_flashEndTransaction | s_camEndTransaction | s_ramDmaEndTransaction;
+                             s_sdramEndTransaction | s_hdmiEndTransaction | s_flashEndTransaction | s_camEndTransaction | s_ramDmaEndTransaction | s_accSobelEndTransaction;
  assign s_addressData      = s_cpu1AddressData | s_biosAddressData | s_uartAddressData | s_sdramAddressData | s_hdmiAddressData |
-                             s_flashAddressData | s_camAddressData | s_ramDmaAddressData;
- assign s_byteEnables      = s_cpu1byteEnables | s_hdmiByteEnables | s_camByteEnables | s_ramDmaByteEnables;
- assign s_readNotWrite     = s_cpu1ReadNotWrite | s_hdmiReadNotWrite | s_ramDmaReadNotWrite;
+                             s_flashAddressData | s_camAddressData | s_ramDmaAddressData | s_accSobelAddressData;
+ assign s_byteEnables      = s_cpu1byteEnables | s_hdmiByteEnables | s_camByteEnables | s_ramDmaByteEnables | s_accSobelByteEnables;
+ assign s_readNotWrite     = s_cpu1ReadNotWrite | s_hdmiReadNotWrite | s_ramDmaReadNotWrite | s_accSobelReadNotWrite;
  assign s_dataValid        = s_cpu1DataValid | s_biosDataValid | s_uartDataValid | s_sdramDataValid | s_hdmiDataValid | 
-                             s_flashDataValid | s_camDataValid | s_ramDmaDataValid;
+                             s_flashDataValid | s_camDataValid | s_ramDmaDataValid | s_accSobelDataValid;
  assign s_busy             = s_sdramBusy;
- assign s_burstSize        = s_cpu1BurstSize | s_hdmiBurstSize | s_camBurstSize | s_ramDmaBurstSize;
+ assign s_burstSize        = s_cpu1BurstSize | s_hdmiBurstSize | s_camBurstSize | s_ramDmaBurstSize | s_accSobelBurstSize;
  
 endmodule

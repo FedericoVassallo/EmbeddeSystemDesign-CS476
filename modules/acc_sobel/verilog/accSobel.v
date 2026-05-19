@@ -98,7 +98,10 @@ always @(posedge clock) begin
     end else begin
 
         beginTransactionOut <= 1'b0;
+        readNotWriteOut     <= 1'b0;
         endTransactionOut   <= 1'b0;
+        byteEnablesOut      <= 4'b0000;
+        burstSizeOut        <= 8'd0;
 
         // CI register writes
         if (isMyCi && valueA == 32'd1) begin
