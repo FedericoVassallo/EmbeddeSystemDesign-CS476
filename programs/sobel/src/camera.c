@@ -49,18 +49,9 @@ int main () {
   while(1) {
     vga[2] = swap_u32(2); // 2 to set grayscale
     vga[3] = swap_u32((uint32_t) &motion[0]); // tell HDMI which buffer to display
-    takeSingleImageBlocking((uint32_t) &rgb565[0]);
+    takeSingleImageBlocking((uint32_t) &grayscale[0]);
     asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(7)); // start the Profiling
-    for (int line = 0; line < camParams.nrOfLinesPerImage; line++) {
-      for (int pixel = 0; pixel < camParams.nrOfPixelsPerLine; pixel++) {
-        uint16_t rgb = swap_u16(rgb565[line*camParams.nrOfPixelsPerLine+pixel]);
-        uint32_t red1 = ((rgb >> 11) & 0x1F) << 3;
-        uint32_t green1 = ((rgb >> 5) & 0x3F) << 2;
-        uint32_t blue1 = (rgb & 0x1F) << 3;
-        uint32_t gray = ((red1*54+green1*183+blue1*19) >> 8)&0xFF;
-        grayscale[line*camParams.nrOfPixelsPerLine+pixel] = gray;
-      }
-    }
+    
     edgeDetection(grayscale, sobelCurr, camParams.nrOfPixelsPerLine, camParams.nrOfLinesPerImage, 128); // output buffer is sobelCurr
     // motion detection we see the difference from the previous frame
     int totalPixels = camParams.nrOfPixelsPerLine * camParams.nrOfLinesPerImage;

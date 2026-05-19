@@ -61,7 +61,6 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
   
   reg [2:0] s_stateMachineReg, s_stateMachineNext;
   reg s_singleShotDoneReg;
-  reg [1:0] s_singleShotActionReg;
   
   wire s_isMyCi = (ciN == customInstructionId) ? ciStart & ciCke : 1'b0;
   /*
@@ -92,7 +91,7 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
   
   always @(posedge clock)
     begin
-      s_frameBufferBaseReg   <= (reset == 1'b1) ? 32'd0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd5) ? {ciValueB[31:2],2'd0} : s_frameBufferBaseReg; // we set the base frame address where we will write later the pixel data (called in streaming.c)
+      s_frameBufferBaseReg   <= (reset == 1'b1) ? 32'd0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd5) ? {ciValueB[31:2],2'd0} : s_frameBufferBaseReg;
       s_grabberActiveReg     <= (reset == 1'b1) ? 1'b0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd6) ? ciValueB[0]& ~ciValueB[1] : s_grabberActiveReg;
       s_grabberSingleShotReg <= (reset == 1'b1 || s_singleShotActionReg[0] == 1'b1) ? 1'b0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd6) ? ciValueB[1]& ~ciValueB[0] : s_grabberSingleShotReg;
     end
@@ -163,48 +162,38 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
    * Here the grabber is defined
    *
    */
-  reg [7:0] s_byte3Reg,s_byte2Reg,s_byte1Reg;
+  reg [7:0] s_byte3Reg,s_byte2Reg,s_byte1Reg,s_byte4Reg,s_byte5Reg,s_byte6Reg,s_byte7Reg;
   reg [8:0] s_busSelectReg;
   wire [31:0] s_busPixelWord;
-  wire [31:0] s_grayscalePixelWord; // defined the s_grayscalePixelWord that will contain two RGB565-grayscale pixels
-  wire [31:0] s_pixelWord = {s_byte1Reg,camData,s_byte3Reg,s_byte2Reg};
+  wire [7:0] s_pixel1, s_pixel2,s_pixel3,s_pixel4;
+  wire [31:0] s_rgb565Grayscale = {s_pixel4,s_pixel3,s_pixel2,s_pixel1};
   wire s_weLineBuffer = (s_pixelCountReg[2:0] == 3'b111) ? hsync : 1'b0;
 
-  // now we Perform the RGB565 to grayscale conversion on the two pixels contained in the signal s_pixelWord as done in PW2
-
-  wire [7:0] grayPixel0;
-  wire [7:0] grayPixel1;
-  reg [7:0] grayPixel0Reg;
-  reg [7:0] grayPixel1Reg;
-
-  rgb565Grayscale gray0 (
-    .rgb565(s_pixelWord[15:0]),
-    .grayscale(grayPixel0)
-  );
-
-  rgb565Grayscale gray1 (
-    .rgb565(s_pixelWord[31:16]),
-    .grayscale(grayPixel1)
-  );
-
-  assign s_grayscalePixelWord = {grayPixel1, grayPixel0, grayPixel1Reg, grayPixel0Reg}; // we assign the grayscale pixel word to contain the four grayscale pixels
-
+  rgb565Grayscale gray1 ( .rgb565({s_byte7Reg,s_byte6Reg}),
+                          .grayscale(s_pixel1) );
+  rgb565Grayscale gray2 ( .rgb565({s_byte5Reg,s_byte4Reg}),
+                          .grayscale(s_pixel2) );
+  rgb565Grayscale gray3 ( .rgb565({s_byte3Reg,s_byte2Reg}),
+                          .grayscale(s_pixel3) );
+  rgb565Grayscale gray4 ( .rgb565({s_byte1Reg,camData}),
+                          .grayscale(s_pixel4) );
   always @(posedge pclk)
     begin
-      s_byte3Reg <= (s_pixelCountReg[1:0] == 2'b00 && hsync == 1'b1) ? camData : s_byte3Reg;
-      s_byte2Reg <= (s_pixelCountReg[1:0] == 2'b01 && hsync == 1'b1) ? camData : s_byte2Reg;
-      s_byte1Reg <= (s_pixelCountReg[1:0] == 2'b10 && hsync == 1'b1) ? camData : s_byte1Reg;
-
-      grayPixel0Reg <= (s_pixelCountReg[2:0] == 3'b011 && hsync == 1'b1) ? grayPixel0 : grayPixel0Reg;
-      grayPixel1Reg <= (s_pixelCountReg[2:0] == 3'b011 && hsync == 1'b1) ? grayPixel1 : grayPixel1Reg;
+      s_byte7Reg <= (s_pixelCountReg[2:0] == 3'b000 && hsync == 1'b1) ? camData : s_byte7Reg;
+      s_byte6Reg <= (s_pixelCountReg[2:0] == 3'b001 && hsync == 1'b1) ? camData : s_byte6Reg;
+      s_byte5Reg <= (s_pixelCountReg[2:0] == 3'b010 && hsync == 1'b1) ? camData : s_byte5Reg;
+      s_byte4Reg <= (s_pixelCountReg[2:0] == 3'b011 && hsync == 1'b1) ? camData : s_byte4Reg;
+      s_byte3Reg <= (s_pixelCountReg[2:0] == 3'b100 && hsync == 1'b1) ? camData : s_byte3Reg;
+      s_byte2Reg <= (s_pixelCountReg[2:0] == 3'b101 && hsync == 1'b1) ? camData : s_byte2Reg;
+      s_byte1Reg <= (s_pixelCountReg[2:0] == 3'b110 && hsync == 1'b1) ? camData : s_byte1Reg;
     end
   
-  dualPortRam2k lineBuffer ( .address1(s_pixelCountReg[10:3]),
+  dualPortRam2k lineBuffer ( .address1({1'b0,s_pixelCountReg[10:3]}),
                              .address2(s_busSelectReg),
                              .clock1(pclk),
                              .clock2(clock),
                              .writeEnable(s_weLineBuffer),
-                             .dataIn1(s_grayscalePixelWord), // changed this that before was taking s_pixelWord 
+                             .dataIn1(s_rgb565Grayscale),
                              .dataOut2(s_busPixelWord));
 
   /*
@@ -214,6 +203,7 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
    */
   reg [31:0] s_busAddressReg, s_addressDataOutReg;
   reg [8:0] s_nrOfPixelsPerLineReg;
+  reg [1:0] s_singleShotActionReg;
   reg s_dataValidReg;
   reg [8:0] s_burstCountReg;
   reg  s_grabberRunningReg;
@@ -242,10 +232,8 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
     begin
       s_busAddressReg        <= s_busAddressNext;
       s_grabberRunningReg    <= (reset == 1'b1) ? 1'b0 : (s_newScreen == 1'b1) ? s_grabberActiveReg : s_grabberRunningReg;
-      s_singleShotActionReg  <= (reset == 1'b1 || s_singleShotActionReg[1] == 1'b1) ? 2'b0 : 
-                                (s_newScreen == 1'b1) ? {s_singleShotActionReg[0],s_grabberSingleShotReg} : s_singleShotActionReg;
-      s_singleShotDoneReg    <= (reset == 1'b1 || (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd6 && ciValueB[1] == 1'b1 && ciValueB[0] == 1'b0)) ? 1'b0 : 
-                                (s_singleShotActionReg[1] == 1'b1) ? 1'b1 : s_singleShotDoneReg;
+      s_singleShotActionReg  <= (reset == 1'b1 || s_singleShotActionReg[1] == 1'b1) ? 2'b0 : (s_newScreen == 1'b1) ? {1'b0,s_grabberSingleShotReg} : s_singleShotActionReg;
+      s_singleShotDoneReg    <= (reset == 1'b1 || (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd7)) ? 1'b1 : (s_singleShotActionReg[1] == 1'b1) ? 1'b1 : s_singleShotDoneReg;
       s_stateMachineReg      <= (reset == 1'b1) ? IDLE : s_stateMachineNext;
       beginTransactionOut    <= (s_stateMachineReg == INIT_BURST1) ? 1'd1 : 1'd0;
       byteEnablesOut         <= (s_stateMachineReg == INIT_BURST1) ? 4'hF : 4'd0;
@@ -258,7 +246,7 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
       s_burstCountReg        <= (s_stateMachineReg == INIT_BURST1) ? s_burstSizeNext - 8'd1 :
                                 (s_doWrite == 1'b1) ? s_burstCountReg - 9'd1 : s_burstCountReg;
       s_busSelectReg         <= (s_stateMachineReg == IDLE) ? 9'd0 : (s_doWrite == 1'b1) ? s_busSelectReg + 9'd1 : s_busSelectReg;
-      s_nrOfPixelsPerLineReg <= (s_newLine == 1'b1) ? s_pixelCountValueReg[10:3] : 
+      s_nrOfPixelsPerLineReg <= (s_newLine == 1'b1) ? {1'b0, s_pixelCountValueReg[10:3]} : 
                                 (s_stateMachineReg == INIT_BURST1) ? s_nrOfPixelsPerLineReg - {1'b0,s_burstSizeNext} : s_nrOfPixelsPerLineReg;
     end
   
