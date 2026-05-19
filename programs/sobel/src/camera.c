@@ -53,6 +53,11 @@ int main () {
     asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(7)); // start the Profiling
     
     edgeDetection(grayscale, sobelCurr, camParams.nrOfPixelsPerLine, camParams.nrOfLinesPerImage, 128); // output buffer is sobelCurr
+    // stop the profiling and then print the cycles
+    asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
+    printf("nrOfCycles: %d %d %d\n", cycles, stall, idle);
     // motion detection we see the difference from the previous frame
     int totalPixels = camParams.nrOfPixelsPerLine * camParams.nrOfLinesPerImage;
     for (int i = 0; i < totalPixels; i++) {
@@ -65,11 +70,5 @@ int main () {
     volatile uint8_t *temp = sobelPrev;
     sobelPrev = sobelCurr;
     sobelCurr = temp;
-
-    // stop the profiling and then print the cycles
-    asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
-    printf("nrOfCycles: %d %d %d\n", cycles, stall, idle);
   }
 }

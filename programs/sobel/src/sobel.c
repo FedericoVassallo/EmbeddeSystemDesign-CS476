@@ -9,33 +9,51 @@
 #include <stdint.h>
 #include <swap.h>
 
-void edgeDetection( volatile uint8_t *grayscale,
-                    volatile uint8_t *sobelResult,
+void edgeDetection( const uint8_t *grayscale,    // Removed volatile
+                    uint8_t *sobelResult,        // Removed volatile
                     int32_t width,
                     int32_t height,
                     int32_t threshold ) {
-                      // for now threshold is hard-wired
-
+                      
+    uint32_t valueA, valueB, edge;
+    
     for (int line = 1; line < height - 1; line++) {
+        // Set up three linear pointers for the top, middle, and bottom rows
+        const uint8_t *rTop = &grayscale[(line - 1) * width];
+        const uint8_t *rMid = &grayscale[ line      * width];
+        const uint8_t *rBot = &grayscale[(line + 1) * width];
+
+        // Pre-load the first two columns of the sliding window
+        uint32_t t0 = rTop[0], t1 = rTop[1];
+        uint32_t m0 = rMid[0], m1 = rMid[1];
+        uint32_t b0 = rBot[0], b1 = rBot[1];
+
+        // Pointer for the output pixel to avoid 2D math
+        uint8_t *outPixel = &sobelResult[line * width + 1];
+
         for (int pixel = 1; pixel < width - 1; pixel++) {
-            /* gather the 8 neighbours of (line,pixel) */
-            uint32_t p1 = grayscale[(line-1)*width + (pixel-1)];
-            uint32_t p2 = grayscale[(line-1)*width + (pixel  )];
-            uint32_t p3 = grayscale[(line-1)*width + (pixel+1)];
-            uint32_t p4 = grayscale[(line  )*width + (pixel-1)];
-            uint32_t p6 = grayscale[(line  )*width + (pixel+1)];
-            uint32_t p7 = grayscale[(line+1)*width + (pixel-1)];
-            uint32_t p8 = grayscale[(line+1)*width + (pixel  )];
-            uint32_t p9 = grayscale[(line+1)*width + (pixel+1)];
+            // Read ONLY the 3 new pixels for the right side of the window
+            uint32_t t2 = rTop[pixel + 1];
+            uint32_t m2 = rMid[pixel + 1];
+            uint32_t b2 = rBot[pixel + 1];
 
-            uint32_t valueA = (p1 << 24) | (p2 << 16) | (p3 << 8) | p4;
-            uint32_t valueB = (p6 << 24) | (p7 << 16) | (p8 << 8) | p9;
+            // Pack the registers for the hardware instruction
+            valueA = (t0 << 24) | (t1 << 16) | (t2 << 8) | m0;
+            valueB = (m2 << 24) | (b0 << 16) | (b1 << 8) | b2;
 
-            uint32_t edge;
-            asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xD": [out1]"=r"(edge): [in1]"r"(valueA), [in2]"r"(valueB));
-            sobelResult[line*width + pixel] = (uint8_t)edge;
+            // Execute custom hardware instruction
+            asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xD"
+                          : [out1]"=r"(edge)
+                          : [in1]"r"(valueA), [in2]"r"(valueB));
+
+            // Apply the threshold to the raw hardware magnitude
+            *outPixel = (edge > threshold) ? 255 : 0;
+            outPixel++;
+
+            // Shift the window left for the next iteration (pure register moves)
+            t0 = t1; t1 = t2;
+            m0 = m1; m1 = m2;
+            b0 = b1; b1 = b2;
         }
     }
 }
-
-
