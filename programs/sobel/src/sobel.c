@@ -13,29 +13,31 @@ void edgeDetection( volatile uint8_t *grayscale,
                     int32_t width,
                     int32_t height,
                     int32_t threshold ) {
-  const int32_t gx_array[3][3] = {{-1,0,1},
-                                  {-2,0,2},
-                                  {-1,0,1}};
-  const int32_t gy_array[3][3] = { {1, 2, 1},
-                                   {0, 0, 0},
-                                   {-1,-2,-1}};
-  int32_t valueX,valueY, result;
-  for (int line = 1; line < height - 1; line++) {
-    for (int pixel = 1; pixel < width - 1; pixel++) {
-      valueX = valueY = 0;
-      for (int dx = -1; dx < 2; dx++) {
-        for (int dy = -1; dy < 2; dy++) {
-          uint32_t index = ((line+dy)*width)+dx+pixel;
-          int32_t gray = grayscale[index];
-          valueX += gray*gx_array[dy+1][dx+1];
-          valueY += gray*gy_array[dy+1][dx+1];
+                      // for now threshold is hard-wired
+
+    for (int line = 1; line < height - 1; line++) {
+        for (int pixel = 1; pixel < width - 1; pixel++) {
+            /* gather the 8 neighbours of (line,pixel) */
+            uint32_t p1 = grayscale[(line-1)*width + (pixel-1)];
+            uint32_t p2 = grayscale[(line-1)*width + (pixel  )];
+            uint32_t p3 = grayscale[(line-1)*width + (pixel+1)];
+            uint32_t p4 = grayscale[(line  )*width + (pixel-1)];
+            uint32_t p6 = grayscale[(line  )*width + (pixel+1)];
+            uint32_t p7 = grayscale[(line+1)*width + (pixel-1)];
+            uint32_t p8 = grayscale[(line+1)*width + (pixel  )];
+            uint32_t p9 = grayscale[(line+1)*width + (pixel+1)];
+
+            uint32_t valueA = (p4 << 24) | (p3 << 16) | (p2 << 8) | p1;
+            uint32_t valueB = (p9 << 24) | (p8 << 16) | (p7 << 8) | p6;
+
+            uint32_t edge;
+            asm volatile ("l.nios_rrr %[out],%[inA],%[inB],0xD"
+                          : [out]"=r"(edge)
+                          : [inA]"r"(valueA), [inB]"r"(valueB));
+
+            sobelResult[line*width + pixel] = (uint8_t)edge;
         }
-      }
-      result = (valueX < 0) ? -valueX : valueX;
-      result += (valueY < 0) ? -valueY : valueY;
-      sobelResult[line*width+pixel] = (result > threshold) ? 0xFF : 0;
     }
-  }
 }
 
 

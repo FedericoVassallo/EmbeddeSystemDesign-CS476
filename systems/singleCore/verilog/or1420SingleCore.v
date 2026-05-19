@@ -469,7 +469,7 @@ module or1420SingleCore ( input wire         clock12MHz,
   wire        s_sobelCiDone;
   wire [31:0] s_sobelCiResult;
 
-  sobelCi #( .customId(8'd13) ) sobel_ci_inst (
+  sobelCi #( .customId(8'h0D) ) sobel_ci_inst (
       .start(s_cpu1CiStart),
       .clock(s_systemClock),
       .reset(s_cpuReset),
