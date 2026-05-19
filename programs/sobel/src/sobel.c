@@ -31,10 +31,7 @@ void edgeDetection( volatile uint8_t *grayscale,
             uint32_t valueB = (p9 << 24) | (p8 << 16) | (p7 << 8) | p6;
 
             uint32_t edge;
-            asm volatile ("l.nios_rrr %[out],%[inA],%[inB],0xD"
-                          : [out]"=r"(edge)
-                          : [inA]"r"(valueA), [inB]"r"(valueB));
-
+            asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xD": [out1]"=r"(edge): [in1]"r"(valueA), [in2]"r"(valueB));
             sobelResult[line*width + pixel] = (uint8_t)edge;
         }
     }
