@@ -12,6 +12,8 @@ module sobelCi #( parameter [7:0] customId = 8'h00 )
 
 wire correctId = (ciN == customId);
 
+wire [11:0] threshold = 12'd128; // hard-wired threshold that match the 128 that was used in the orginal sobel implementation
+
 // Pixel mapping 
 wire [7:0] p1 = valueA[7:0];
 wire [7:0] p2 = valueA[15:8];
@@ -45,12 +47,14 @@ assign dy =   $signed({3'b0, p1})
 wire [10:0] abs_dx = (dx[10]) ? -dx : dx;
 wire [10:0] abs_dy = (dy[10]) ? -dy : dy;
 
-wire [10:0] magnitude = abs_dx + abs_dy;
+wire [11:0] magnitude = abs_dx + abs_dy;
+
+wire [7:0] sobelPixel = (magnitude > threshold) ? 8'hFF : 8'h00; 
 
 // we oitput the result only if start is high and the ID matches, otherwise we put 0
-assign result = ((start == 1'b1) && (correctId == 1'b1)) ? {21'b0, magnitude} : 32'd0;
+assign result = ((start == 1'b1) && (correctId == 1'b1)) ? {24'b0, sobelPixel} : 32'd0;
 
 // assign done only if we have start on and the corret ID
 assign done = ((start == 1'b1) && (correctId == 1'b1)) ? 1'b1 : 1'b0;
 
-endmodule;
+endmodule
