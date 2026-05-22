@@ -1,74 +1,104 @@
+#include <stdint.h>
 #include <stdio.h>
-#include <ov7670.h>
-#include <swap.h>
-#include <vga.h>
-// #include <floyd_steinberg.h>
-#include <sobel.h>
-#ifdef __OR1300__
-#include <cache.h>
-#endif
 
-volatile uint16_t rgb565[640*480];
-volatile uint8_t grayscale[640*480];
-// volatile uint8_t floyd[640*480];
-// volatile int16_t error_array[642<<1];
-volatile uint8_t sobelA[640*480];   // edge map, buffer A
-volatile uint8_t sobelB[640*480];   // edge map, buffer B
-volatile uint8_t motion[640*480];   // motion result, that will be shown in HDMI
+#define SOBEL_ACC_REG_STATUS   0u
+#define SOBEL_ACC_REG_SRC      1u
+#define SOBEL_ACC_REG_DST      2u
+#define SOBEL_ACC_REG_CONTROL  3u
+#define SOBEL_ACC_REG_READ_SRC 4u
+#define SOBEL_ACC_REG_READ_DST 5u
 
-int main () {
-  volatile int result;
-  volatile unsigned int *vga = (unsigned int *) 0X50000020;
-  camParameters camParams;
-  volatile uint32_t cycles,stall,idle;
+#define SOBEL_ACC_STATUS_DONE  0x1u
+#define SOBEL_ACC_STATUS_BUSY  0x2u
+#define SOBEL_ACC_STATUS_ERROR 0x4u
 
-  volatile uint8_t *sobelCurr = sobelA;   // where this frame's edges go
-  volatile uint8_t *sobelPrev = sobelB;   // last frame's edges
+int main(void)
+{
+    test_sobel_accelerator_ci();
 
-#ifdef __OR1300__
-  icache_write_cfg(CACHE_SIZE_8K|CACHE_FOUR_WAY|CACHE_REPLACE_LRU);
-  dcache_write_cfg(CACHE_SIZE_8K|CACHE_FOUR_WAY|CACHE_WRITE_BACK|CACHE_REPLACE_PLRU);
-  icache_enable(1);
-  dcache_enable(1);
-#endif
-  vga_clear();
-  
-  printf("Initialising camera (this takes up to 3 seconds)!\n" );
-  camParams = initOv7670(VGA);
-  printf("Done!\n" );
-  printf("NrOfPixels : %d\n", camParams.nrOfPixelsPerLine );
-  result = (camParams.nrOfPixelsPerLine <= 320) ? camParams.nrOfPixelsPerLine | 0x80000000 : camParams.nrOfPixelsPerLine;
-  vga[0] = swap_u32(result);
-  printf("NrOfLines  : %d\n", camParams.nrOfLinesPerImage );
-  result =  (camParams.nrOfLinesPerImage <= 240) ? camParams.nrOfLinesPerImage | 0x80000000 : camParams.nrOfLinesPerImage;
-  vga[1] = swap_u32(result);
-  printf("PCLK (kHz) : %d\n", camParams.pixelClockInkHz );
-  printf("FPS        : %d\n", camParams.framesPerSecond );
-  for (int i = 0; i < 640*480; i++) { sobelA[i] = 0; sobelB[i] = 0; } // clear buffers
-
-  while(1) {
-    vga[2] = swap_u32(2); // 2 to set grayscale
-    vga[3] = swap_u32((uint32_t) &motion[0]); // tell HDMI which buffer to display
-    takeSingleImageBlocking((uint32_t) &grayscale[0]);
-    asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(7)); // start the Profiling
-    
-    edgeDetection(grayscale, sobelCurr, camParams.nrOfPixelsPerLine, camParams.nrOfLinesPerImage, 128); // output buffer is sobelCurr
-    // stop the profiling and then print the cycles
-    asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
-    printf("nrOfCycles: %d %d %d\n", cycles, stall, idle);
-    // motion detection we see the difference from the previous frame
-    int totalPixels = camParams.nrOfPixelsPerLine * camParams.nrOfLinesPerImage;
-    for (int i = 0; i < totalPixels; i++) {
-      int diff = (int)sobelCurr[i] - (int)sobelPrev[i];
-      if (diff < 0) diff = -diff; // this is commented for new we have to decide if we want to show both edges or only the new one
-      motion[i] = (diff > 0) ? 255 : 0;
+    while (1) {
     }
 
-    // we swap the two pointers
-    volatile uint8_t *temp = sobelPrev;
-    sobelPrev = sobelCurr;
-    sobelCurr = temp;
-  }
+    return 0;
+}
+
+static inline uint32_t sobel_acc_ci(uint32_t a, uint32_t b)
+{
+    uint32_t r;
+
+    asm volatile (
+        "l.nios_rrr %[out],%[inA],%[inB],0xE"
+        : [out] "=r" (r)
+        : [inA] "r" (a), [inB] "r" (b)
+    );
+
+    return r;
+}
+
+void test_sobel_accelerator_ci(void)
+{
+    uint32_t src_addr = 0x00100000u;
+    uint32_t dst_addr = 0x00200000u;
+
+    uint32_t status;
+    uint32_t read_src;
+    uint32_t read_dst;
+    uint32_t timeout;
+
+    printf("Testing Sobel accelerator CI 0x0E...\n");
+
+    sobel_acc_ci(SOBEL_ACC_REG_SRC, src_addr);
+    sobel_acc_ci(SOBEL_ACC_REG_DST, dst_addr);
+
+    read_src = sobel_acc_ci(SOBEL_ACC_REG_READ_SRC, 0);
+    read_dst = sobel_acc_ci(SOBEL_ACC_REG_READ_DST, 0);
+
+    printf("SRC written: 0x%08lx, SRC read: 0x%08lx\n",
+           (unsigned long)src_addr,
+           (unsigned long)read_src);
+
+    printf("DST written: 0x%08lx, DST read: 0x%08lx\n",
+           (unsigned long)dst_addr,
+           (unsigned long)read_dst);
+
+    if (read_src != src_addr) {
+        printf("ERROR: source address readback failed\n");
+        return;
+    }
+
+    if (read_dst != dst_addr) {
+        printf("ERROR: destination address readback failed\n");
+        return;
+    }
+
+    status = sobel_acc_ci(SOBEL_ACC_REG_STATUS, 0);
+    printf("Initial status: 0x%08lx\n", (unsigned long)status);
+
+    sobel_acc_ci(SOBEL_ACC_REG_CONTROL, 1);
+
+    timeout = 1000000u;
+
+    do {
+        status = sobel_acc_ci(SOBEL_ACC_REG_STATUS, 0);
+        timeout--;
+    } while ((status & SOBEL_ACC_STATUS_BUSY) && timeout != 0);
+
+    printf("Final status: 0x%08lx\n", (unsigned long)status);
+
+    if (timeout == 0) {
+        printf("ERROR: accelerator timeout\n");
+        return;
+    }
+
+    if (status & SOBEL_ACC_STATUS_ERROR) {
+        printf("ERROR: accelerator error bit set\n");
+        return;
+    }
+
+    if (!(status & SOBEL_ACC_STATUS_DONE)) {
+        printf("ERROR: done bit not set\n");
+        return;
+    }
+
+    printf("Sobel accelerator CI test passed\n");
 }
