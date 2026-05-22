@@ -12,6 +12,9 @@
 #define SOBEL_ACC_STATUS_BUSY  0x2u
 #define SOBEL_ACC_STATUS_ERROR 0x4u
 
+// Add the forward declaration here
+void test_sobel_accelerator_ci(void);
+
 int main(void)
 {
     test_sobel_accelerator_ci();
