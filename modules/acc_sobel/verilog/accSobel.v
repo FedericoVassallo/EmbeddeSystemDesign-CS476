@@ -269,13 +269,12 @@ always @(posedge clock) begin
         endTransactionOut   <= 1'b0;
         byteEnablesOut      <= 4'b0000;
         burstSizeOut        <= 8'd0;
-        // addrDataOutReg / dataValidOutReg: cleared to 0 by default;
-        // S_WRITE_BURST overrides when needed.
-        addrDataOutReg      <= 32'd0;
-        dataValidOutReg     <= 1'b0;
 
-        // Those lines act as a safety net. They guarantee that every bus signal defaults to a safe, quiet state, meaning your FSM only has to speak up when it actually has something to say.
-        // CHECK maybe we can move them directly inside the state 
+        // ── Bus output signals: hold during busyIn, clear otherwise ──────────────
+        addrDataOutReg      <= (doWrite) ? outWord :
+                              (state == S_WRITE_BURST && busyIn) ? addrDataOutReg : 32'd0;
+        dataValidOutReg     <= (doWrite) ? 1'b1 :
+                              (state == S_WRITE_BURST && busyIn) ? dataValidOutReg : 1'b0;
 
 
         // ── CI register writes (live-through while idle or busy) ──────────────
@@ -428,15 +427,8 @@ always @(posedge clock) begin
                     state <= S_WRITE_END;
                 end else if (!writeCount[8] && !busyIn) begin
                     // Send next word.
-                    addrDataOutReg  <= outWord; // current word being sent
-                    dataValidOutReg <= 1'b1;
                     writeWordIdx    <= writeWordIdx + 1;
                     writeCount      <= writeCount - 9'd1;
-                end else begin
-                    // busyIn=1: hold current data/valid.
-                    // to check if we should add the busy check
-                    addrDataOutReg  <= addrDataOutReg;
-                    dataValidOutReg <= dataValidOutReg;
                 end
             end
 

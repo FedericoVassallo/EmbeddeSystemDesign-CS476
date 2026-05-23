@@ -68,6 +68,9 @@ int main () {
     vga[2] = swap_u32(2); // 2 to set grayscale
     vga[3] = swap_u32((uint32_t) &motion[0]); // tell HDMI which buffer to display
     takeSingleImageBlocking((uint32_t) &grayscale[0]);
+#ifdef __OR1300__
+    dcache_flush(); // make source visible to the accelerator
+#endif
     asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(7)); // start profiling
 
     // ── Fire the hardware Sobel accelerator ──────────────────────────────────
@@ -82,6 +85,9 @@ int main () {
         acc_status = sobel_acc_ci(SOBEL_ACC_REG_STATUS, 0);
         acc_timeout--;
     } while ((acc_status & SOBEL_ACC_STATUS_BUSY) && acc_timeout != 0);
+#ifdef __OR1300__
+    dcache_flush(); // make accelerator writes visible to CPU
+#endif
 
     // stop profiling and print cycles
     asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
