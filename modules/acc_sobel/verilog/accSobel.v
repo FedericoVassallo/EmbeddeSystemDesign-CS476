@@ -58,6 +58,7 @@ module accSobel #(
 
 // ─── Derived constants ────────────────────────────────────────────────────────
 localparam integer WORDS_PER_ROW = IMG_WIDTH / 4;   // 160 for 640-wide image
+localparam integer MAX_BURST_WORDS = 16;
 
 // Bit widths — correct for the 640×480 defaults.
 // Increase COL_BITS / ROW_BITS / WORD_BITS when IMG_WIDTH / IMG_HEIGHT grow.
@@ -115,10 +116,17 @@ reg [COL_BITS-1:0]  compCol;       // Which column (pixel x-coordinate) are we c
 reg [1:0]           loadBufIdx;    // which physical buffer to write during load
 reg [WORD_BITS-1:0] wordIdx;       // Counts up from 0 to 159 to keep track of how many 32-bit words we have read from the bus.
 reg [WORD_BITS-1:0] writeWordIdx;  // Counts up from 0 to 159 to keep track of how many 32-bit words we have written to the bus during the write burst
+reg [5:0]           loadBurstWords;
+reg [5:0]           writeBurstWords;
 reg [8:0]           writeCount;    // burst countdown; [8]=1 when all words sent since it weaps around to a negative number
 reg [1:0]           prefillCount;  // Counts 0, 1, 2 as the accelerator fetches the very first three rows. Once it hits 3, the FSM knows the pipeline is primed and math can begin
 reg [31:0]          loadAddrReg;   // The 32-bit SDRAM address where the next raw image row should be read from.
 reg [31:0]          writeAddrReg;  // The 32-bit SDRAM address where the next finished edge map row should be written to.
+
+wire [8:0] loadWordsRemaining  = WORDS_PER_ROW - wordIdx;
+wire [8:0] writeWordsRemaining = WORDS_PER_ROW - writeWordIdx;
+wire [5:0] loadChunkWords  = (loadWordsRemaining > MAX_BURST_WORDS) ? 6'd32 : loadWordsRemaining[5:0];
+wire [5:0] writeChunkWords = (writeWordsRemaining > MAX_BURST_WORDS) ? 6'd32 : writeWordsRemaining[5:0];
 
 // ─── Registered bus inputs (pipeline one stage for timing) ───────────────────
 reg        endTxReg, dataValidReg;
@@ -248,6 +256,8 @@ always @(posedge clock) begin
         loadBufIdx    <= 2'd0;
         wordIdx       <= {WORD_BITS{1'b0}};
         writeWordIdx  <= {WORD_BITS{1'b0}};
+        loadBurstWords <= 6'd0;
+        writeBurstWords <= 6'd0;
         writeCount    <= 9'd0;
         compCol       <= {COL_BITS{1'b0}};
         prefillCount  <= 2'd0;
@@ -318,9 +328,9 @@ always @(posedge clock) begin
                 beginTransactionOut <= 1'b1;
                 readNotWriteOut     <= 1'b1;
                 byteEnablesOut      <= 4'hF;
-                burstSizeOut        <= WORDS_PER_ROW[7:0] - 8'd1;  // 159 in our default case
+                burstSizeOut        <= loadChunkWords - 8'd1;
+                loadBurstWords      <= loadChunkWords;
                 addrDataOutReg      <= loadAddrReg;
-                wordIdx             <= 8'd0;
                 state               <= S_LOAD_BURST;
             end
 
@@ -358,18 +368,24 @@ always @(posedge clock) begin
 
                     // End of burst: decide next step.
                     if (endTxReg) begin
-                        loadAddrReg <= loadAddrReg + IMG_WIDTH; // advance to next row
+                        loadAddrReg <= loadAddrReg + {loadBurstWords, 2'b00};
 
-                        if (prefillCount < 2'd2) begin
-                            // Still pre-filling rows 0->1 or 1->2
-                            prefillCount <= prefillCount + 2'd1;
-                            loadBufIdx   <= loadBufIdx  + 2'd1;
-                            state        <= S_LOAD_REQ;
+                        if (wordIdx < WORDS_PER_ROW) begin
+                            state <= S_LOAD_REQ;
                         end else begin
-                            // Pre-fill row 2 just finished (or main-loop load done)
-                            if (prefillCount == 2'd2) prefillCount <= 2'd3;
-                            compCol <= {COL_BITS{1'b0}};
-                            state   <= S_COMPUTE;
+                            wordIdx <= {WORD_BITS{1'b0}};
+
+                            if (prefillCount < 2'd2) begin
+                                // Still pre-filling rows 0->1 or 1->2
+                                prefillCount <= prefillCount + 2'd1;
+                                loadBufIdx   <= loadBufIdx  + 2'd1;
+                                state        <= S_LOAD_REQ;
+                            end else begin
+                                // Pre-fill row 2 just finished (or main-loop load done)
+                                if (prefillCount == 2'd2) prefillCount <= 2'd3;
+                                compCol <= {COL_BITS{1'b0}};
+                                state   <= S_COMPUTE;
+                            end
                         end
                     end
                 end
@@ -386,6 +402,7 @@ always @(posedge clock) begin
                 // The Problem: The Sobel algorithm uses a 3x3 window. To compute the pixel at column 0, it needs the pixel at column -1 (which doesn't exist). To compute column 639, it needs column 640 (which doesn't exist).
                 if (compCol == (IMG_WIDTH - 1)) begin
                     compCol <= {COL_BITS{1'b0}};
+                    writeWordIdx <= {WORD_BITS{1'b0}};
                     state   <= S_WRITE_REQ;
                 end else begin
                     compCol <= compCol + 1;
@@ -409,10 +426,10 @@ always @(posedge clock) begin
                 beginTransactionOut <= 1'b1;
                 readNotWriteOut     <= 1'b0;
                 byteEnablesOut      <= 4'hF;
-                burstSizeOut        <= WORDS_PER_ROW[7:0] - 8'd1;
+                burstSizeOut        <= writeChunkWords - 8'd1;
+                writeBurstWords     <= writeChunkWords;
                 addrDataOutReg      <= writeAddrReg;
-                writeWordIdx        <= {WORD_BITS{1'b0}};
-                writeCount          <= {1'b0, WORDS_PER_ROW[7:0] - 8'd1}; // 9'd159
+                writeCount          <= {3'd0, writeChunkWords} - 9'd1;
                 state               <= S_WRITE_BURST;
             end
 
@@ -443,15 +460,19 @@ always @(posedge clock) begin
             //------------------------------------------------------------------
             S_WRITE_END: begin
                 endTransactionOut <= 1'b1;
-                state             <= S_ADVANCE;
+                writeAddrReg      <= writeAddrReg + {writeBurstWords, 2'b00};
+
+                if (writeWordIdx < WORDS_PER_ROW) begin
+                    state <= S_WRITE_REQ;
+                end else begin
+                    state <= S_ADVANCE;
+                end
             end
 
             //------------------------------------------------------------------
             // Rotate the circular buffers.
             // The former-top buffer will hold the next source row (new botBuf).
             S_ADVANCE: begin
-                writeAddrReg <= writeAddrReg + IMG_WIDTH; // we update the next write address that will be for the beginning of the next row
-
                 if (rowProc < (IMG_HEIGHT - 2)) begin
                     // here we do the rotation of the sliding window. The mid row becomes the new top, the bot row becomes the new mid, and the old top becomes the one that will get the new data loaded into 
                     topIdx     <= midIdx; 
