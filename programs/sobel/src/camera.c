@@ -94,10 +94,13 @@ int main () {
     volatile uint32_t *mot32  = (volatile uint32_t *)motion;
     // Divide total pixels by 4 to get the number of 32-bit words
 
-    for (int i = 0; i < totalWords; i++) {
-        // A bitwise XOR perfectly calculates the absolute difference 
-        // of binary (0x00/0xFF) pixels, processing 4 pixels in one instruction.
-        mot32[i] = curr32[i] ^ prev32[i]; 
+    // Loop unrolling: Process 4 words (16 pixels) per loop iteration
+    // This reduces the branch instruction overhead by 75%
+    for (int i = 0; i < totalWords; i += 4) {
+        mot32[i]   = curr32[i]   ^ prev32[i]; 
+        mot32[i+1] = curr32[i+1] ^ prev32[i+1]; 
+        mot32[i+2] = curr32[i+2] ^ prev32[i+2]; 
+        mot32[i+3] = curr32[i+3] ^ prev32[i+3]; 
     }
 
     // we swap the two pointers
