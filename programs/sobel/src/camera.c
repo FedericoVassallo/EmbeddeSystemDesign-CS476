@@ -64,6 +64,9 @@ int main () {
   printf("FPS        : %d\n", camParams.framesPerSecond );
   for (int i = 0; i < 640*480; i++) { sobelA[i] = 0; sobelB[i] = 0; } // clear buffers
 
+  int totalPixels = camParams.nrOfPixelsPerLine * camParams.nrOfLinesPerImage;
+  int totalWords = (camParams.nrOfPixelsPerLine * camParams.nrOfLinesPerImage) / 4;
+
   while(1) {
     vga[2] = swap_u32(2); // 2 to set grayscale
     vga[3] = swap_u32((uint32_t) &motion[0]); // tell HDMI which buffer to display
@@ -84,26 +87,27 @@ int main () {
     } while ((acc_status & SOBEL_ACC_STATUS_BUSY) && acc_timeout != 0);
 
     // stop profiling and print cycles
-    asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
-    printf("nrOfCycles: %d %d %d\n", cycles, stall, idle);
+    
+    // Cast our 8-bit arrays to 32-bit pointers to process 4 pixels at a time
+    volatile uint32_t *curr32 = (volatile uint32_t *)sobelCurr;
+    volatile uint32_t *prev32 = (volatile uint32_t *)sobelPrev;
+    volatile uint32_t *mot32  = (volatile uint32_t *)motion;
+    // Divide total pixels by 4 to get the number of 32-bit words
 
-    if (acc_timeout == 0)
-        printf("ACCEL TIMEOUT! status=0x%08lx\n", (unsigned long)acc_status);
-    else if (acc_status & SOBEL_ACC_STATUS_ERROR)
-        printf("ACCEL ERROR!   status=0x%08lx\n", (unsigned long)acc_status);
-    // motion detection we see the difference from the previous frame
-    int totalPixels = camParams.nrOfPixelsPerLine * camParams.nrOfLinesPerImage;
-    for (int i = 0; i < totalPixels; i++) {
-      int diff = (int)sobelCurr[i] - (int)sobelPrev[i];
-      if (diff < 0) diff = -diff; // this is commented for new we have to decide if we want to show both edges or only the new one
-      motion[i] = (diff > 0) ? 255 : 0;
+    for (int i = 0; i < totalWords; i++) {
+        // A bitwise XOR perfectly calculates the absolute difference 
+        // of binary (0x00/0xFF) pixels, processing 4 pixels in one instruction.
+        mot32[i] = curr32[i] ^ prev32[i]; 
     }
 
     // we swap the two pointers
     volatile uint8_t *temp = sobelPrev;
     sobelPrev = sobelCurr;
     sobelCurr = temp;
+
+    asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
+    printf("nrOfCycles: %d %d %d\n", cycles, stall, idle);
   }
 }
