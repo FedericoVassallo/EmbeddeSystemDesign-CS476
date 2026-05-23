@@ -12,6 +12,8 @@
 #define SOBEL_ACC_REG_SRC      1u   // write: source grayscale frame address
 #define SOBEL_ACC_REG_DST      2u   // write: destination edge-map address
 #define SOBEL_ACC_REG_CONTROL  3u   // write: bit 0 = start
+#define SOBEL_ACC_REG_WIDTH    6u   // write: image width in pixels
+#define SOBEL_ACC_REG_HEIGHT   7u   // write: image height in pixels
 
 #define SOBEL_ACC_STATUS_DONE  0x1u
 #define SOBEL_ACC_STATUS_BUSY  0x2u
@@ -64,6 +66,10 @@ int main () {
   printf("FPS        : %d\n", camParams.framesPerSecond );
   for (int i = 0; i < 640*480; i++) { sobelA[i] = 0; sobelB[i] = 0; } // clear buffers
 
+  // Configure the Sobel accelerator with actual camera dimensions
+  sobel_acc_ci(SOBEL_ACC_REG_WIDTH, (uint32_t)camParams.nrOfPixelsPerLine);
+  sobel_acc_ci(SOBEL_ACC_REG_HEIGHT, (uint32_t)camParams.nrOfLinesPerImage);
+
   while(1) {
     vga[2] = swap_u32(2); // 2 to set grayscale
     vga[3] = swap_u32((uint32_t) &motion[0]); // tell HDMI which buffer to display
@@ -74,9 +80,11 @@ int main () {
     asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(7)); // start profiling
 
     // ── Fire the hardware Sobel accelerator ──────────────────────────────────
+    sobel_acc_ci(SOBEL_ACC_REG_WIDTH, (uint32_t)camParams.nrOfPixelsPerLine);
+    sobel_acc_ci(SOBEL_ACC_REG_HEIGHT, (uint32_t)camParams.nrOfLinesPerImage);
     sobel_acc_ci(SOBEL_ACC_REG_SRC, (uint32_t)&grayscale[0]);
     sobel_acc_ci(SOBEL_ACC_REG_DST, (uint32_t)sobelCurr);
-    sobel_acc_ci(SOBEL_ACC_REG_CONTROL, 1u); // start accelerator (need to write 3 on valueA and 1 on valueB) 
+    sobel_acc_ci(SOBEL_ACC_REG_CONTROL, 1u); // start accelerator 
 
     // Poll until done (busy goes low) or timeout
     volatile uint32_t acc_status;

@@ -84,6 +84,7 @@ reg [3:0] state;
 
 // ─── CI configuration registers ──────────────────────────────────────────────
 reg [31:0] sourceAddressReg, destinationAddressReg;
+reg [31:0] imgWidthReg, imgHeightReg;  // Dynamic image dimensions
 reg        doneReg, errorReg;
 
 wire isMyCi   = start & (ciN == customId);
@@ -94,6 +95,8 @@ assign result =
     (isMyCi & (valueA == 32'd0)) ? {29'd0, errorReg, busyWire, doneReg} :
     (isMyCi & (valueA == 32'd4)) ? sourceAddressReg :
     (isMyCi & (valueA == 32'd5)) ? destinationAddressReg :
+    (isMyCi & (valueA == 32'd6)) ? imgWidthReg :
+    (isMyCi & (valueA == 32'd7)) ? imgHeightReg :
     32'd0;
 
 // ─── Three physical line buffers + one output buffer (byte-granular) ──────────
@@ -280,6 +283,8 @@ always @(posedge clock) begin
         // ── CI register writes (live-through while idle or busy) ──────────────
         if (isMyCi && (valueA == 32'd1)) sourceAddressReg      <= valueB;
         if (isMyCi && (valueA == 32'd2)) destinationAddressReg <= valueB;
+        if (isMyCi && (valueA == 32'd6)) imgWidthReg          <= valueB;
+        if (isMyCi && (valueA == 32'd7)) imgHeightReg         <= valueB;
         if (isMyCi && (valueA == 32'd3) && valueB[0] && !busyWire) begin
             doneReg  <= 1'b0;
             errorReg <= 1'b0;
@@ -295,13 +300,12 @@ always @(posedge clock) begin
             //------------------------------------------------------------------
             // Initialise shadow registers, then kick off the pre-fill sequence.
             S_INIT: begin
-                loadAddrReg  <= sourceAddressReg; // start loading from the first source byte
-                // Row 1 is the first output row (row 0 is a border).
-                writeAddrReg <= destinationAddressReg + IMG_WIDTH; // start writing to the second row of the dest buffer, since the first row is a border and should be 0 to do so we skip the first row that is the first 640 bytes
-                loadBufIdx   <= 2'd0; // start loading into lineBuf0, which will be the top row of the first 3×3, the loadBufIdx will rotate as we rotate the line buffers
-                prefillCount <= 2'd0; // the counter for the pre-filling of the first three rows, here we set initialize it to 0
-                rowProc      <= 1; // This tracks which row we are actively applying the Sobel math to. Again, because Row 0 is a border, the first row we will process is Row 1.
-                topIdx <= 2'd0; midIdx <= 2'd1; botIdx <= 2'd2; // initialize the circular buffer indices so that lineBuf0 is top, lineBuf1 is mid, lineBuf2 is bot. We will rotate these as we go, but this is the starting configuration.
+                loadAddrReg  <= sourceAddressReg;
+                writeAddrReg <= destinationAddressReg + imgWidthReg;
+                loadBufIdx   <= 2'd0;
+                prefillCount <= 2'd0;
+                rowProc      <= 1;
+                topIdx <= 2'd0; midIdx <= 2'd1; botIdx <= 2'd2;
                 state  <= S_LOAD_REQ; 
             end
 
@@ -317,7 +321,7 @@ always @(posedge clock) begin
                 beginTransactionOut <= 1'b1;
                 readNotWriteOut     <= 1'b1;
                 byteEnablesOut      <= 4'hF;
-                burstSizeOut        <= WORDS_PER_ROW[7:0] - 8'd1;  // 159 in our default case
+                burstSizeOut        <= (imgWidthReg[9:2]) - 8'd1;
                 addrDataOutReg      <= loadAddrReg;
                 wordIdx             <= 8'd0;
                 state               <= S_LOAD_BURST;
@@ -408,10 +412,10 @@ always @(posedge clock) begin
                 beginTransactionOut <= 1'b1;
                 readNotWriteOut     <= 1'b0;
                 byteEnablesOut      <= 4'hF;
-                burstSizeOut        <= WORDS_PER_ROW[7:0] - 8'd1;
+                burstSizeOut        <= (imgWidthReg[9:2]) - 8'd1;
                 addrDataOutReg      <= writeAddrReg;
                 writeWordIdx        <= {WORD_BITS{1'b0}};
-                writeCount          <= {1'b0, WORDS_PER_ROW[7:0] - 8'd1}; // 9'd159
+                writeCount          <= {1'b0, (imgWidthReg[9:2]) - 8'd1};
                 state               <= S_WRITE_BURST;
             end
 
@@ -442,20 +446,16 @@ always @(posedge clock) begin
             // Rotate the circular buffers.
             // The former-top buffer will hold the next source row (new botBuf).
             S_ADVANCE: begin
-                writeAddrReg <= writeAddrReg + IMG_WIDTH; // we update the next write address that will be for the beginning of the next row
+                writeAddrReg <= writeAddrReg + imgWidthReg;
 
-                if (rowProc < (IMG_HEIGHT - 2)) begin
-                    // here we do the rotation of the sliding window. The mid row becomes the new top, the bot row becomes the new mid, and the old top becomes the one that will get the new data loaded into 
+                if (rowProc < (imgHeightReg - 2)) begin
                     topIdx     <= midIdx; 
                     midIdx     <= botIdx;
-                    botIdx     <= topIdx;    // former top becomes new bot
-                    loadBufIdx <= topIdx;    // we will load the next row into it
+                    botIdx     <= topIdx;
+                    loadBufIdx <= topIdx;
                     rowProc    <= rowProc + 1;
                     state      <= S_LOAD_REQ;
-                    // loadAddrReg already points to the next unloaded row
-                    // (incremented at the end of each S_LOAD_BURST).
                 end else begin 
-                    // if rowProc is already at the last row, it means we have finished processing the whole image and we can move to the done state
                     state <= S_DONE;
                 end
             end
