@@ -292,18 +292,18 @@ always @(posedge clock) begin
                         loadAddrReg <= loadAddrReg + 32'd4;
                     end
 
-                    if (endTransactionInReg) begin // endTransactionInReg is the registered input of the endTransactionIn bus signal 
-                        if ((wordIdx + {7'd0, dataValidReg}) < WORDS_PER_ROW) begin
+                    if (endTransactionInReg) begin // so it runs when we are at a burst end
+                        if ((wordIdx + {7'd0, dataValidReg}) < WORDS_PER_ROW) begin // if we haven't loaded all the words of the row we start another burst to load the next words of the row (the {7'd0, dataValidReg} adds 1 if the very last word of this burst arrived in the same cycle of the end transaction)
                             state <= LOAD_REQ;
-                        end else begin
-                            wordIdx <= {WORD_BITS{1'b0}};
+                        end else begin // if instead we have loaded the full row
+                            wordIdx <= {WORD_BITS{1'b0}}; // reset word index to 0
 
-                            if (prefillCount < 2'd2) begin
+                            if (prefillCount < 2'd2) begin // since we have filled one of the line if we were still in the prefill phase we increment the prefill count
                                 prefillCount <= prefillCount + 2'd1;
                                 loadBufIdx   <= loadBufIdx  + 2'd1;
                                 state        <= LOAD_REQ;
                             end else begin
-                                if (prefillCount == 2'd2) prefillCount <= 2'd3;
+                                if (prefillCount == 2'd2) prefillCount <= 2'd3; // if we were in the last prefill we set the prefill count to 3 and go to computation
                                 compCol <= {COL_BITS{1'b0}};
                                 state   <= COMPUTE;
                             end
@@ -413,9 +413,9 @@ always @(posedge clock) begin
                 end
             end
 
-            DONE: begin
+            DONE: begin // we have finished we set the done reg to signal if the cpu was polling that we finished
                 doneReg <= 1'b1;
-                state   <= IDLE;
+                state   <= IDLE; 
             end
 
             default: begin
