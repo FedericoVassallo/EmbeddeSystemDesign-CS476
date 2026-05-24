@@ -1,12 +1,12 @@
-// Streaming Sobel edge-detection accelerator — bus master, CI id 0x0E.
-//
+// Streaming Sobel edge-detection accelerator — bus master, .
+// We set the CI id for this to 0x0E
 // CI protocol (valueA):
-//   0  read  status {error, busy, done}
-//   1  write source  frame address    (valueB)
-//   2  write dest    edge-map address (valueB)
+//   0  read status {error, busy, done}
+//   1  write source frame address (valueB)
+//   2  write dest edge-map address (valueB)
 //   3  control: valueB[0]=1 starts the accelerator (ignored while busy)
 //   4  read back source address
-//   5  read back dest   address
+//   5  read back dest address
 
 module accSobel #(
     parameter [7:0]   customId   = 8'h0E,
@@ -14,10 +14,10 @@ module accSobel #(
     parameter integer IMG_HEIGHT = 480
 ) (
     input  wire        start,
-                       clock,
-                       reset,
+    input  wire        clock,
+    input  wire        reset,
     input  wire [31:0] valueA,
-                       valueB,
+    input  wire [31:0] valueB,
     input  wire [7:0]  ciN,
     output wire        done,
     output wire [31:0] result,
@@ -28,118 +28,117 @@ module accSobel #(
 
     // Bus inputs
     input  wire        endTransactionIn,
-                       dataValidIn,
-                       busErrorIn,
-                       busyIn,
+    input  wire        dataValidIn,
+    input  wire        busErrorIn,
+    input  wire        busyIn,
     input  wire [31:0] addressDataIn,
 
     // Bus outputs
     output reg         beginTransactionOut,
-                       readNotWriteOut,
-                       endTransactionOut,
+    output reg         readNotWriteOut,
+    output reg         endTransactionOut,
     output wire        dataValidOut,
     output reg  [3:0]  byteEnablesOut,
     output reg  [7:0]  burstSizeOut,
     output wire [31:0] addressDataOut
 );
 
-// ─── Derived constants ────────────────────────────────────────────────────────
-localparam integer WORDS_PER_ROW = IMG_WIDTH / 4;   // 160 for 640-wide image
-localparam integer MAX_BURST_WORDS = 16;
+
+localparam integer WORDS_PER_ROW = IMG_WIDTH / 4;   // since each word is 4 pixels (32 bits)
+localparam integer MAX_BURST_WORDS = 16; 
 
 // Bit widths
-localparam integer COL_BITS  = 10;  
-localparam integer ROW_BITS  = 9;   
-localparam integer WORD_BITS = 8;   
+localparam integer COL_BITS  = 10; // since the image width is 640, we need 10 bits to index columns (with 10 bits we can go up to 1024)
+localparam integer ROW_BITS  = 9;   // since the image height is 480, we need 9 bits to index rows
+localparam integer WORD_BITS = 8;   // since each word is 4 pixels, we need 8 bits to index within a word
 
-// ─── FSM state encoding ───────────────────────────────────────────────────────
+// FSM states
 localparam [3:0]
-    S_IDLE        = 4'd0,
-    S_INIT        = 4'd1,
-    S_LOAD_REQ    = 4'd2,   
-    S_LOAD_SETUP  = 4'd3,   
-    S_LOAD_BURST  = 4'd4,   
-    S_COMPUTE     = 4'd5,   
-    S_WRITE_REQ   = 4'd6,   
-    S_WRITE_SETUP = 4'd7,   
-    S_WRITE_BURST = 4'd8,   
-    S_WRITE_END   = 4'd9,   
-    S_ADVANCE     = 4'd10,  
-    S_DONE        = 4'd11;
+    IDLE        = 4'd0,
+    INIT        = 4'd1,
+    LOAD_REQ    = 4'd2,   
+    LOAD_SETUP  = 4'd3,   
+    LOAD_BURST  = 4'd4,   
+    COMPUTE     = 4'd5,   
+    WRITE_REQ   = 4'd6,   
+    WRITE_SETUP = 4'd7,   
+    WRITE_BURST = 4'd8,   
+    WRITE_END   = 4'd9,   
+    ADVANCE     = 4'd10,  
+    DONE        = 4'd11;
 
 reg [3:0] state;
 
-// ─── CI configuration registers ──────────────────────────────────────────────
-reg [31:0] sourceAddressReg, destinationAddressReg;
+reg [31:0] sourceAddressReg, destinationAddressReg; // reg that will hold the source and destination addresses set by the CI writes
 reg        doneReg, errorReg;
 
-wire isMyCi   = start & (ciN == customId);
-wire busyWire = (state != S_IDLE);
+wire isMyCi   = start & (ciN == customId); // usual wire to check if the instruction is meant for this CI
+wire busyWire = (state != IDLE); // everytime we are not in the IDLE it means we are busy
 
-assign done   = isMyCi;
-assign result =
-    (isMyCi & (valueA == 32'd0)) ? {29'd0, errorReg, busyWire, doneReg} :
-    (isMyCi & (valueA == 32'd4)) ? sourceAddressReg :
-    (isMyCi & (valueA == 32'd5)) ? destinationAddressReg :
-    32'd0;
+assign done   = isMyCi; // we set the done output as soon as we receive the instruction 
+// depending on the valueA we give a different result in output
+assign result = (isMyCi & (valueA == 32'd0)) ? {29'd0, errorReg, busyWire, doneReg} :
+                (isMyCi & (valueA == 32'd4)) ? sourceAddressReg :
+                (isMyCi & (valueA == 32'd5)) ? destinationAddressReg :
+                32'd0;
 
-// ─── Three physical line buffers + one output buffer ──────────────────────────
+
+
+// each of these memory array holds one row of the image (it stores IMG_WIDTH bytes)
 reg [7:0] lineBuf0 [0:IMG_WIDTH-1];
 reg [7:0] lineBuf1 [0:IMG_WIDTH-1];
 reg [7:0] lineBuf2 [0:IMG_WIDTH-1];
 reg [7:0] outBuf   [0:IMG_WIDTH-1];
 
-// ─── Circular buffer rotation indices ────────────────────────────────────────
+// index to indicate the order of the line buffer (added so that we avoid to physically change the line buffers and just change the mapping)
 reg [1:0] topIdx, midIdx, botIdx;
 
-// ─── Counters and shadow address registers ────────────────────────────────────
-reg [ROW_BITS-1:0]  rowProc;       
-reg [COL_BITS-1:0]  compCol;       
-reg [1:0]           loadBufIdx;    
-reg [WORD_BITS-1:0] wordIdx;       
-reg [WORD_BITS-1:0] writeWordIdx;  
-reg [5:0]           loadBurstWords;
-reg [5:0]           writeBurstWords;
-reg [8:0]           writeCount;    
-reg [1:0]           prefillCount;  
-reg [31:0]          loadAddrReg;   
-reg [31:0]          writeAddrReg;  
+reg [ROW_BITS-1:0]  rowProc; // is the current row being processed
+reg [COL_BITS-1:0]  compCol; // is the current column being processed     
+reg [1:0]           loadBufIdx; // which of the line buffer of above is now being loaded with the new row  
+reg [WORD_BITS-1:0] wordIdx; // which 32-bit word is being loaded from memory into a line buffer
+reg [WORD_BITS-1:0] writeWordIdx; // which 32-bit word is being written from the output buffer to memory 
+reg [5:0]           loadBurstWords; // how many words are being loaded in the current burst (since the burst size can be less than 16 words for the last burst of a row)
+reg [5:0]           writeBurstWords; // how many words are being written in the current burst (since the burst size can be less than 16 words for the last burst of a row) so same as above but for output data
+reg [8:0]           writeCount; // words left to send in the current write burst
+reg [1:0]           prefillCount; // how many input line buffers have already been filled since before starting the computation we need to fille the 3 line buffers 
+reg [31:0]          loadAddrReg; // current memory address being read from
+reg [31:0]          writeAddrReg; // current memory address being written to
 
 // Filter delay registers
 reg [7:0] p_left;
 reg [7:0] p_center;
 
-// Dynamic burst sizing chunk logic (Fixed the hardcoded 32 bug!)
-wire [8:0] loadWordsRemaining  = WORDS_PER_ROW - wordIdx;
-wire [8:0] writeWordsRemaining = WORDS_PER_ROW - writeWordIdx;
-wire [5:0] loadChunkWords  = (loadWordsRemaining > MAX_BURST_WORDS) ? MAX_BURST_WORDS[5:0] : loadWordsRemaining[5:0];
-wire [5:0] writeChunkWords = (writeWordsRemaining > MAX_BURST_WORDS) ? MAX_BURST_WORDS[5:0] : writeWordsRemaining[5:0];
+wire [8:0] loadWordsRemaining  = WORDS_PER_ROW - wordIdx; // how many words are left to read 
+wire [8:0] writeWordsRemaining = WORDS_PER_ROW - writeWordIdx; // how many words are left to write
+wire [5:0] loadChunkWords  = (loadWordsRemaining > MAX_BURST_WORDS) ? MAX_BURST_WORDS[5:0] : loadWordsRemaining[5:0]; // the burst size selected for the bus transfer (if the remaining words are more than the max burst size we select the max burst size, otherwise we select the remaining words)
+wire [5:0] writeChunkWords = (writeWordsRemaining > MAX_BURST_WORDS) ? MAX_BURST_WORDS[5:0] : writeWordsRemaining[5:0]; // equal as above but for the write burst size
 
-// ─── Registered bus inputs ───────────────────────────────────────────────────
-reg        endTxReg, dataValidReg;
+// the bus input that are registered for timing reasons
+reg        endTransactionInReg, dataValidReg;
 reg [31:0] addrDataReg;
 
+// here we register the bus inputs
 always @(posedge clock) begin
-    endTxReg     <= endTransactionIn;
+    endTransactionInReg     <= endTransactionIn;
     dataValidReg <= dataValidIn;
     addrDataReg  <= addressDataIn;
 end
 
-// ─── Bus output signals ───────────────────────────────────────────────────────
-assign requestTransaction = ((state == S_LOAD_REQ) | (state == S_WRITE_REQ));
+// we request the bus access when we are in the load or in the write state
+assign requestTransaction = ((state == LOAD_REQ) | (state == WRITE_REQ));
 
-reg [31:0] addrDataOutReg;
-reg        dataValidOutReg;
+reg [31:0] addrDataOutReg; // registered version of the bus output address/data
+reg        dataValidOutReg; // registered version of the bus output data valid signal
 assign addressDataOut = addrDataOutReg;
 assign dataValidOut   = dataValidOutReg;
 
-// ─── Pixel access: combinational mux ──────────────────────────────────────────
+// reg that store the 3x3 pixel needed for the sobel (the p5 is not needed since is alway multiplied by 0)
 reg [7:0] p1, p2, p3, p4, p6, p7, p8, p9;
 
 always @(*) begin
-    p1 = 8'd0; p2 = 8'd0; p3 = 8'd0; p4 = 8'd0;            
-    p6 = 8'd0; p7 = 8'd0; p8 = 8'd0; p9 = 8'd0;
 
+    // depending on the index of the line buffer we are using as top, mid and bot we select the correct pixels for the sobel filter
     case (topIdx)
         2'd0: begin p1 = lineBuf0[compCol - 1]; p2 = lineBuf0[compCol]; p3 = lineBuf0[compCol + 1]; end
         2'd1: begin p1 = lineBuf1[compCol - 1]; p2 = lineBuf1[compCol]; p3 = lineBuf1[compCol + 1]; end
@@ -157,38 +156,39 @@ always @(*) begin
     endcase
 end
 
-// ─── Sobel datapath ──────────────────────────────────────────────────────────
-wire [31:0] s_sobelValueA = {p4, p3, p2, p1};
-wire [31:0] s_sobelValueB = {p9, p8, p7, p6};
-wire [31:0] s_sobelResult;
+wire [31:0] s_sobelValueA = {p4, p3, p2, p1}; // pack the 4 pixel in a 32 word to send to the sobelCi
+wire [31:0] s_sobelValueB = {p9, p8, p7, p6};  // pack the other 4 pixel in a 32 word to send to the sobelCi
+wire [31:0] s_sobelResult; // word that will hold the result from sobelCi
 
-sobelCi #(.customId(8'h00)) sobelInner (
-    .start(1'b1),
+// here we instantiate the sobelCi that will do the Sobel filter
+sobelCi #(.customId(8'h00)) sobelInner ( 
+    .start(1'b1), // we always keep it with start 1
     .clock(clock),
     .reset(reset),
     .stall(1'b0),
     .busIdle(1'b0),
     .valueA(s_sobelValueA),
     .valueB(s_sobelValueB),
-    .ciN(8'h00),
+    .ciN(8'h00), // since this is an inner CI we can just set the ciN to 0
     .done(),
     .result(s_sobelResult)
 );
 
-wire [7:0] sobelPixel = s_sobelResult[7:0];
+wire [7:0] sobelPixel = s_sobelResult[7:0]; // since the sobelResult has just the last byte with the pixel value we take just that byte
 
-// ─── Output word packing ──────────────────────────────────────────────────────
+// is a 32 bit word tha packs 4 pixels from the output buffer to be sent to memory
+// for all of these we are shifting by 2 so its like writeWordIdx*4, and the adding the 2 final bits to select the correct byte within the word
 wire [31:0] outWord = {
-    outBuf[{writeWordIdx, 2'b11}],
+    outBuf[{writeWordIdx, 2'b11}], 
     outBuf[{writeWordIdx, 2'b10}],
-    outBuf[{writeWordIdx, 2'b01}],
-    outBuf[{writeWordIdx, 2'b00}]
+    outBuf[{writeWordIdx, 2'b01}], // here is like  outBuf[writeWordIdx*4 + 1]
+    outBuf[{writeWordIdx, 2'b00}] 
 };
 
-// ─── Main clocked FSM ─────────────────────────────────────────────────────────
 always @(posedge clock) begin
     if (reset) begin
-        state                 <= S_IDLE;
+        // here at reset we just initialazed everything to 0
+        state                 <= IDLE;
         sourceAddressReg      <= 32'd0;
         destinationAddressReg <= 32'd0;
         doneReg               <= 1'b0;
@@ -216,6 +216,7 @@ always @(posedge clock) begin
         addrDataOutReg      <= 32'd0;
         dataValidOutReg     <= 1'b0;
     end else begin
+        // since these signals just need to be on for one cycle when we start the transaction we can just set them to 0 at every cycle and then set them to 1 in the state where we need to start the transaction
         beginTransactionOut <= 1'b0;
         readNotWriteOut     <= 1'b0;
         endTransactionOut   <= 1'b0;
@@ -224,49 +225,50 @@ always @(posedge clock) begin
         addrDataOutReg      <= 32'd0;
         dataValidOutReg     <= 1'b0;
 
-        if (isMyCi && (valueA == 32'd1)) sourceAddressReg      <= valueB;
-        if (isMyCi && (valueA == 32'd2)) destinationAddressReg <= valueB;
-        if (isMyCi && (valueA == 32'd3) && valueB[0] && !busyWire) begin
+        if (isMyCi && (valueA == 32'd1)) sourceAddressReg      <= valueB; // if the instr is 1 we set the source address = valueB
+        if (isMyCi && (valueA == 32'd2)) destinationAddressReg <= valueB; // id the instr is 2 we set the destination address = valueB
+        if (isMyCi && (valueA == 32'd3) && valueB[0] && !busyWire) begin // if we receive the start instr (3) and the valueB[0] is 1 and we are not busy we start the accelerator by going to the init state
             doneReg  <= 1'b0;
             errorReg <= 1'b0;
-            state    <= S_INIT;
+            state    <= INIT;
         end
 
         case (state)
-            S_IDLE: ; 
+            IDLE: ; // in the idle state we just wait and do nothing
 
-            S_INIT: begin
-                loadAddrReg  <= sourceAddressReg; 
-                writeAddrReg <= destinationAddressReg + IMG_WIDTH; 
-                loadBufIdx   <= 2'd0; 
-                prefillCount <= 2'd0; 
-                rowProc      <= 1; 
-                topIdx <= 2'd0; midIdx <= 2'd1; botIdx <= 2'd2; 
-                state  <= S_LOAD_REQ; 
+            INIT: begin
+                loadAddrReg  <= sourceAddressReg; // we set the load address to the source and destination address received from the CI
+                writeAddrReg <= destinationAddressReg + IMG_WIDTH;  // we set the write address to the second row of the output image since the first row is border and is always 0 so we can skip it
+                loadBufIdx   <= 2'd0; // we start loading from the lineBuf0 
+                prefillCount <= 2'd0; // at the beginning we haven't prefilled anything so the prefill count is 0
+                rowProc      <= 1; // we start processing from the first row since the 0 row is border and is always 0 so we can skip it
+                topIdx <= 2'd0; midIdx <= 2'd1; botIdx <= 2'd2; // initialize the idx of the buffer 
+                state  <= LOAD_REQ; 
             end
 
-            S_LOAD_REQ: begin
-                if (transactionGranted) state <= S_LOAD_SETUP;
+            LOAD_REQ: begin
+                if (transactionGranted) state <= LOAD_SETUP; // we just wait until we get a bus grant
             end
 
-            S_LOAD_SETUP: begin
-                beginTransactionOut <= 1'b1;
-                readNotWriteOut     <= 1'b1;
-                byteEnablesOut      <= 4'hF;
-                burstSizeOut        <= loadChunkWords - 8'd1;
-                loadBurstWords      <= loadChunkWords;
-                addrDataOutReg      <= loadAddrReg;
-                state               <= S_LOAD_BURST;
+            LOAD_SETUP: begin
+                beginTransactionOut <= 1'b1; // we set signal of transaction started
+                readNotWriteOut     <= 1'b1; // we set it to one since we are reading from the bus 
+                byteEnablesOut      <= 4'hF; // we set all the byte enables to 1 since we want to read a full word
+                burstSizeOut        <= loadChunkWords - 8'd1; // we set the burst size to the number of words we want to read in this burst (minus 1 since the burst is +1 the burst size)
+                loadBurstWords      <= loadChunkWords; // we save the burst size in a reg to use it later
+                addrDataOutReg      <= loadAddrReg; // we set the address to read from to the current load address reg
+                state               <= LOAD_BURST;
             end
 
-            S_LOAD_BURST: begin
+            LOAD_BURST: begin
                 if (busErrorIn) begin
                     errorReg <= 1'b1;
-                    state    <= S_IDLE;
+                    state    <= IDLE;
                 end else begin
                     if (dataValidReg) begin
-                        case (loadBufIdx)
+                        case (loadBufIdx) // we switch what line buffer we load based on the loadBufIdx, and we load the 4 pixels of the current word based on the wordIdx
                             2'd0: begin
+                                // as before for indexing the line buffer we do wordIdx*4 + the byte within the word
                                 lineBuf0[{wordIdx, 2'b00}] <= addrDataReg[7:0];
                                 lineBuf0[{wordIdx, 2'b01}] <= addrDataReg[15:8];
                                 lineBuf0[{wordIdx, 2'b10}] <= addrDataReg[23:16];
@@ -285,32 +287,32 @@ always @(posedge clock) begin
                                 lineBuf2[{wordIdx, 2'b11}] <= addrDataReg[31:24];
                             end
                         endcase
+                        // we increment after loading of the word
                         wordIdx <= wordIdx + 1;
-                        // FIX: Safely increment by exactly 4 bytes!
                         loadAddrReg <= loadAddrReg + 32'd4;
                     end
 
-                    if (endTxReg) begin
+                    if (endTransactionInReg) begin // endTransactionInReg is the registered input of the endTransactionIn bus signal 
                         if ((wordIdx + {7'd0, dataValidReg}) < WORDS_PER_ROW) begin
-                            state <= S_LOAD_REQ;
+                            state <= LOAD_REQ;
                         end else begin
                             wordIdx <= {WORD_BITS{1'b0}};
 
                             if (prefillCount < 2'd2) begin
                                 prefillCount <= prefillCount + 2'd1;
                                 loadBufIdx   <= loadBufIdx  + 2'd1;
-                                state        <= S_LOAD_REQ;
+                                state        <= LOAD_REQ;
                             end else begin
                                 if (prefillCount == 2'd2) prefillCount <= 2'd3;
                                 compCol <= {COL_BITS{1'b0}};
-                                state   <= S_COMPUTE;
+                                state   <= COMPUTE;
                             end
                         end
                     end
                 end
             end
 
-            S_COMPUTE: begin
+            COMPUTE: begin
                 // Morphological Filter Shift Registers
                 if (compCol == 0) begin
                     p_left <= 8'h00;
@@ -334,17 +336,17 @@ always @(posedge clock) begin
                     outBuf[IMG_WIDTH - 1] <= 8'h00; // border
                     compCol <= {COL_BITS{1'b0}};
                     writeWordIdx <= {WORD_BITS{1'b0}};
-                    state   <= S_WRITE_REQ;
+                    state   <= WRITE_REQ;
                 end else begin
                     compCol <= compCol + 1;
                 end
             end
 
-            S_WRITE_REQ: begin
-                if (transactionGranted) state <= S_WRITE_SETUP;
+            WRITE_REQ: begin
+                if (transactionGranted) state <= WRITE_SETUP;
             end
 
-            S_WRITE_SETUP: begin
+            WRITE_SETUP: begin
                 beginTransactionOut <= 1'b1;
                 readNotWriteOut     <= 1'b0;
                 byteEnablesOut      <= 4'hF;
@@ -352,13 +354,13 @@ always @(posedge clock) begin
                 writeBurstWords     <= writeChunkWords;
                 addrDataOutReg      <= writeAddrReg;
                 writeCount          <= {3'd0, writeChunkWords} - 9'd1;
-                state               <= S_WRITE_BURST;
+                state               <= WRITE_BURST;
             end
 
-            S_WRITE_BURST: begin
+            WRITE_BURST: begin
                 if (busErrorIn) begin
                     errorReg <= 1'b1;
-                    state    <= S_IDLE;
+                    state    <= IDLE;
                 end else begin
                     if (!busyIn && !writeCount[8]) begin
                         addrDataOutReg  <= outWord; 
@@ -376,49 +378,49 @@ always @(posedge clock) begin
 
                     // FIX: Catch early bus aborts in the write state!
                     if (!busyIn && writeCount[8]) begin
-                        state <= S_WRITE_END;
-                    end else if (endTxReg) begin
+                        state <= WRITE_END;
+                    end else if (endTransactionInReg) begin
                         if (!writeCount[8]) begin
-                            state <= S_WRITE_REQ; 
+                            state <= WRITE_REQ; 
                             dataValidOutReg <= 1'b0;
                         end else begin
-                            state <= S_ADVANCE;
+                            state <= ADVANCE;
                         end
                     end
                 end
             end
 
-            S_WRITE_END: begin
+            WRITE_END: begin
                 endTransactionOut <= 1'b1;
                 
                 if (writeWordIdx < WORDS_PER_ROW) begin
-                    state <= S_WRITE_REQ;
+                    state <= WRITE_REQ;
                 end else begin
-                    state <= S_ADVANCE;
+                    state <= ADVANCE;
                 end
             end
 
-            S_ADVANCE: begin
+            ADVANCE: begin
                 if (rowProc < (IMG_HEIGHT - 2)) begin
                     topIdx     <= midIdx; 
                     midIdx     <= botIdx;
                     botIdx     <= topIdx;  
                     loadBufIdx <= topIdx;  
                     rowProc    <= rowProc + 1;
-                    state      <= S_LOAD_REQ;
+                    state      <= LOAD_REQ;
                 end else begin 
-                    state <= S_DONE;
+                    state <= DONE;
                 end
             end
 
-            S_DONE: begin
+            DONE: begin
                 doneReg <= 1'b1;
-                state   <= S_IDLE;
+                state   <= IDLE;
             end
 
             default: begin
                 errorReg <= 1'b1;
-                state    <= S_IDLE;
+                state    <= IDLE;
             end
 
         endcase
