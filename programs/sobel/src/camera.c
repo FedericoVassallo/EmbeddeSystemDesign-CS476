@@ -26,6 +26,14 @@
 #define MOTION_ACC_STATUS_BUSY  0x2u
 #define MOTION_ACC_STATUS_ERROR 0x4u
 
+#define FRAME_PROFILE_LOG 1
+#define FRAME_PROFILE_INTERVAL 15u
+#define FRAME_PIXELS (640*480)
+#define NR_CAPTURE_BUFFERS 3u
+
+#define CAMERA_CI_REG_FRAMEBUFFER   5u
+#define CAMERA_CI_REG_FRAME_COUNTER 8u
+
 static inline uint32_t motion_acc_ci(uint32_t a, uint32_t b) {
     uint32_t r;
     asm volatile("l.nios_rrr %[out],%[inA],%[inB],0xF"
@@ -43,26 +51,62 @@ static inline uint32_t sobel_acc_ci(uint32_t a, uint32_t b)
     return r;
 }
 
-volatile uint16_t rgb565[640*480];
-volatile uint8_t  grayscale[640*480];
-volatile uint8_t  sobelA[640*480];    // edge map, buffer A
-volatile uint8_t  sobelB[640*480];    // edge map, buffer B
+static inline uint32_t camera_ci(uint32_t a, uint32_t b)
+{
+    uint32_t r;
+    asm volatile("l.nios_rrr %[out],%[inA],%[inB],0x7"
+                 : [out]"=r"(r)
+                 : [inA]"r"(a), [inB]"r"(b));
+    return r;
+}
+
+static inline uint32_t camera_frame_counter(void)
+{
+    return camera_ci(CAMERA_CI_REG_FRAME_COUNTER, 0);
+}
+
+static inline void camera_set_framebuffer(uint32_t framebuffer)
+{
+    camera_ci(CAMERA_CI_REG_FRAMEBUFFER, framebuffer);
+}
+
+static uint32_t wait_for_camera_frame(uint32_t *lastCounter)
+{
+    uint32_t now;
+    do {
+        now = camera_frame_counter();
+    } while (now == *lastCounter);
+
+    uint32_t delta = now - *lastCounter;
+    *lastCounter = now;
+    return delta;
+}
+
+volatile uint8_t  grayscaleA[FRAME_PIXELS];
+volatile uint8_t  grayscaleB[FRAME_PIXELS];
+volatile uint8_t  grayscaleC[FRAME_PIXELS];
+volatile uint8_t  sobelA[FRAME_PIXELS];    // edge map, buffer A
+volatile uint8_t  sobelB[FRAME_PIXELS];    // edge map, buffer B
 // Double-buffered motion output: HDMI displays one buffer while the
 // accelerator writes the other, then we ping-pong. This prevents the
 // visible tearing/flicker that happens when HDMI scans-out a buffer that
 // the Motion accelerator is concurrently writing to.
-volatile uint8_t  motionA[640*480];
-volatile uint8_t  motionB[640*480];
+volatile uint8_t  motionA[FRAME_PIXELS];
+volatile uint8_t  motionB[FRAME_PIXELS];
 
 int main () {
   volatile int result;
   volatile unsigned int *vga = (unsigned int *) 0X50000020;
   camParameters camParams;
+#if FRAME_PROFILE_LOG
   volatile uint32_t cycles, stall, idle;
+  volatile uint32_t frameCounter = 0;
+#endif
   volatile uint8_t *sobelCurr     = sobelA;    // this frame's edges
   volatile uint8_t *sobelPrev     = sobelB;    // last frame's edges
   volatile uint8_t *motionDisplay = motionA;   // what HDMI is currently showing
   volatile uint8_t *motionDraw    = motionB;   // what the accelerator writes into
+  volatile uint8_t *captureBuffers[NR_CAPTURE_BUFFERS] = {grayscaleA, grayscaleB, grayscaleC};
 #ifdef __OR1300__
   icache_write_cfg(CACHE_SIZE_8K|CACHE_FOUR_WAY|CACHE_REPLACE_LRU);
   dcache_write_cfg(CACHE_SIZE_8K|CACHE_FOUR_WAY|CACHE_WRITE_BACK|CACHE_REPLACE_PLRU);
@@ -85,23 +129,41 @@ int main () {
 
   // Clear all buffers so the very first displayed frame is black rather
   // than uninitialised SDRAM.
-  for (int i = 0; i < 640*480; i++) {
-      sobelA[i]  = 0; sobelB[i]  = 0;
-      motionA[i] = 0; motionB[i] = 0;
+  for (int i = 0; i < FRAME_PIXELS; i++) {
+      grayscaleA[i] = 0; grayscaleB[i] = 0; grayscaleC[i] = 0;
+      sobelA[i]     = 0; sobelB[i]     = 0;
+      motionA[i]    = 0; motionB[i]    = 0;
   }
 
+  vga[2] = swap_u32(2); // 2 -> grayscale display mode
+  vga[3] = swap_u32((uint32_t) motionDisplay);
+
+  uint32_t cameraCounter = camera_frame_counter();
+  uint32_t writingIndex = 0;
+
+  enableContinues((uint32_t)captureBuffers[writingIndex]);
+  wait_for_camera_frame(&cameraCounter);
+  camera_set_framebuffer((uint32_t)captureBuffers[1]);
+  wait_for_camera_frame(&cameraCounter);
+  writingIndex = 1;
+
+#if FRAME_PROFILE_LOG
+  printf("Continuous capture enabled, camera frame counter %d\n", cameraCounter);
+#endif
+
   while (1) {
-    vga[2] = swap_u32(2); // 2 → grayscale display mode
-    // Point HDMI at the COMPLETED buffer (motionDisplay). The accelerator
-    // will write into motionDraw, which HDMI is not reading. After both
-    // accelerators finish, we swap so HDMI shows the just-written buffer
-    // on the next iteration.
-    vga[3] = swap_u32((uint32_t) motionDisplay);
-    takeSingleImageBlocking((uint32_t) &grayscale[0]);
+    uint32_t completedIndex = (writingIndex + 2u) % NR_CAPTURE_BUFFERS;
+    uint32_t nextIndex = (writingIndex + 1u) % NR_CAPTURE_BUFFERS;
+    volatile uint8_t *completedFrame = captureBuffers[completedIndex];
+
+    camera_set_framebuffer((uint32_t)captureBuffers[nextIndex]);
+
+#if FRAME_PROFILE_LOG
     asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(7)); // start profiling
+#endif
 
     // ── Fire the hardware Sobel accelerator ──────────────────────────────────
-    sobel_acc_ci(SOBEL_ACC_REG_SRC, (uint32_t)&grayscale[0]);
+    sobel_acc_ci(SOBEL_ACC_REG_SRC, (uint32_t)completedFrame);
     sobel_acc_ci(SOBEL_ACC_REG_DST, (uint32_t)sobelCurr);
     sobel_acc_ci(SOBEL_ACC_REG_CONTROL, 1u); // start
     volatile uint32_t acc_status;
@@ -135,10 +197,26 @@ int main () {
     volatile uint8_t *tempM = motionDisplay;
     motionDisplay = motionDraw;
     motionDraw    = tempM;
+    vga[3] = swap_u32((uint32_t) motionDisplay);
 
+#if FRAME_PROFILE_LOG
     asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
-    printf("nrOfCycles: %d %d %d\n", cycles, stall, idle);
+    if ((frameCounter % FRAME_PROFILE_INTERVAL) == 0) {
+        printf("frame %d cam %d src %d write %d next %d sobel %d/%d motion %d/%d cycles %d stall %d idle %d\n",
+               frameCounter, cameraCounter, completedIndex, writingIndex, nextIndex,
+               acc_status, acc_timeout, mot_status, mot_timeout, cycles, stall, idle);
+    }
+    frameCounter++;
+#endif
+
+    uint32_t cameraDelta = wait_for_camera_frame(&cameraCounter);
+#if FRAME_PROFILE_LOG
+    if (cameraDelta != 1u) {
+        printf("camera frame skip: delta %d counter %d\n", cameraDelta, cameraCounter);
+    }
+#endif
+    writingIndex = nextIndex;
   }
 }
