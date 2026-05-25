@@ -313,48 +313,45 @@ always @(posedge clock) begin
             end
 
             COMPUTE: begin
-                // Morphological Filter Shift Registers
-                if (compCol == 0) begin
-                    p_left <= 8'h00;
-                end else begin
-                    p_left <= p_center;
-                end
+                // when we are at cycle N p_left=sobel[N-2], p_center=sobel[N-1], sobelPixel=sobel[N]
+                // we write outBuf[N- 1] in the cycle N so that there are the right and left neighbors
+                p_left   <= (compCol == 0) ? 8'h00 : p_center;
                 p_center <= sobelPixel;
 
+                // write the previous pixel (compCol-1) into the output buffer
                 if (compCol > 0) begin
-                    // Hardware Morphological Filter: 
-                    // If the center pixel is White (0xFF) but both its left and right 
-                    // neighbors are Black (0x00), it is Salt noise! Crush it to Black.
-                    if (p_center == 8'hFF && p_left == 8'h00 && sobelPixel == 8'h00) begin
-                        outBuf[compCol - 1] <= 8'h00; // Noise removed!
+                    if (compCol == 1) begin
+                        outBuf[0] <= 8'h00; // the border pixel is 0                  
+                    end else if (p_center == 8'hFF && p_left == 8'h00 && sobelPixel == 8'h00) begin
+                        outBuf[compCol - 1] <= 8'h00; // if we see that its left and right neighbors are 0 it probably is noise so we put it to 0
                     end else begin
-                        outBuf[compCol - 1] <= (compCol - 1 == 0) ? 8'h00 : p_center;
+                        outBuf[compCol - 1] <= p_center; // otherewise we put the pixel value computed from sobel
                     end
                 end
 
                 if (compCol == (IMG_WIDTH - 1)) begin
-                    outBuf[IMG_WIDTH - 1] <= 8'h00; // border
-                    compCol <= {COL_BITS{1'b0}};
+                    outBuf[IMG_WIDTH - 1] <= 8'h00; // we set the border pixel to 0
+                    compCol      <= {COL_BITS{1'b0}}; 
                     writeWordIdx <= {WORD_BITS{1'b0}};
-                    state   <= WRITE_REQ;
+                    state        <= WRITE_REQ; 
                 end else begin
                     compCol <= compCol + 1;
                 end
             end
 
             WRITE_REQ: begin
-                if (transactionGranted) state <= WRITE_SETUP;
+                if (transactionGranted) state <= WRITE_SETUP; // again we wait for the bus grant 
             end
 
             WRITE_SETUP: begin
-                beginTransactionOut <= 1'b1;
-                readNotWriteOut     <= 1'b0;
-                byteEnablesOut      <= 4'hF;
+                beginTransactionOut <= 1'b1; // we set the signal to start the transaction
+                readNotWriteOut     <= 1'b0; // we want to write so is set to 0
+                byteEnablesOut      <= 4'hF; // we write a full word
                 burstSizeOut        <= writeChunkWords - 8'd1;
-                writeBurstWords     <= writeChunkWords;
-                addrDataOutReg      <= writeAddrReg;
-                writeCount          <= {3'd0, writeChunkWords} - 9'd1;
-                state               <= WRITE_BURST;
+                writeBurstWords     <= writeChunkWords; //we save the burst size in a reg to use it later 
+                addrDataOutReg      <= writeAddrReg; // we set the address to write to to the current write address reg
+                writeCount          <= {3'd0, writeChunkWords} - 9'd1; 
+                state               <= WRITE_BURST; 
             end
 
             WRITE_BURST: begin
@@ -362,52 +359,42 @@ always @(posedge clock) begin
                     errorReg <= 1'b1;
                     state    <= IDLE;
                 end else begin
-                    if (!busyIn && !writeCount[8]) begin
-                        addrDataOutReg  <= outWord; 
+                    if (!busyIn && !writeCount[8]) begin // write count is decremented by 1 at every word written, so when we finish the word written it does 0 - 1 so it sets the 9th bit to 1 since it becomes negative so we use the 9th bit to check if we have finished
+                        addrDataOutReg  <= outWord; // outword is the word that pack the 4 sobel pixel
                         dataValidOutReg <= 1'b1;
-                        writeWordIdx    <= writeWordIdx + 1;
-                        writeCount      <= writeCount - 9'd1;
-                        // FIX: Safely increment by exactly 4 bytes!
-                        writeAddrReg    <= writeAddrReg + 32'd4; 
+                        writeWordIdx    <= writeWordIdx + 1; // we increment the word index to write the next word in the output buffer
+                        writeCount      <= writeCount - 9'd1; // we decrement the write count to keep track of how many words we have left to write in this burst
+                        writeAddrReg    <= writeAddrReg + 32'd4; // increase by 4 the write address since we write a word of 4 bytes
                     end else if (busyIn) begin
-                        addrDataOutReg  <= addrDataOutReg;
+                        addrDataOutReg  <= addrDataOutReg; // if it is busy we keep the same address and data
                         dataValidOutReg <= dataValidOutReg;
                     end else begin
+                        // if we are not busy and we have finished (writeCount[8] = 1)  we go to the end of write
                         dataValidOutReg <= 1'b0;
-                    end
-
-                    // FIX: Catch early bus aborts in the write state!
-                    if (!busyIn && writeCount[8]) begin
-                        state <= WRITE_END;
-                    end else if (endTransactionInReg) begin
-                        if (!writeCount[8]) begin
-                            state <= WRITE_REQ; 
-                            dataValidOutReg <= 1'b0;
-                        end else begin
-                            state <= ADVANCE;
-                        end
+                        state           <= WRITE_END;
                     end
                 end
             end
 
             WRITE_END: begin
-                endTransactionOut <= 1'b1;
+                endTransactionOut <= 1'b1; // we send the signal to end the transaction
                 
-                if (writeWordIdx < WORDS_PER_ROW) begin
+                if (writeWordIdx < WORDS_PER_ROW) begin // writeWordIdx tracks how many 32-bit words of the output row have been written so far, so if we haven't finished to write the full row we start another burst
                     state <= WRITE_REQ;
                 end else begin
                     state <= ADVANCE;
                 end
             end
 
-            ADVANCE: begin
-                if (rowProc < (IMG_HEIGHT - 2)) begin
+            ADVANCE: begin // we have finished the previous row and we have to see if there are more row to process
+                if (rowProc < (IMG_HEIGHT - 2)) begin // stop at 478 because the last row is border so always 0
+                    // if we still have rows we rotate the indx pointer for teh row order 
                     topIdx     <= midIdx; 
                     midIdx     <= botIdx;
                     botIdx     <= topIdx;  
                     loadBufIdx <= topIdx;  
                     rowProc    <= rowProc + 1;
-                    state      <= LOAD_REQ;
+                    state      <= LOAD_REQ; // we go to request to load the next row
                 end else begin 
                     state <= DONE;
                 end
