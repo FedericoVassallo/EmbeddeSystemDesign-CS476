@@ -309,29 +309,31 @@ always @(posedge clock) begin
             end
 
             COMPUTE: begin
-                // when we are at cycle N p_left=sobel[N-2], p_center=sobel[N-1], sobelPixel=sobel[N]
-                // we write outBuf[N- 1] in the cycle N so that there are the right and left neighbors
-                p_left   <= (compCol == 0) ? 8'h00 : p_center;
-                p_center <= sobelPixel;
+                // in this state we process one column per cycle: we take the sobel output, apply a noise filter, and store the pixel in outBuf
+                // p_left and p_center are like shift registers: at each cycle p_left gets previous center, and p_center gets current sobelPixel
+                if (compCol == 0) begin
+                    p_left <= 8'h00; // for the first column there is no left neighbor, so we force it to black 
+                end else begin
+                    p_left <= p_center; // previous center becomes new left
+                end
+                p_center <= sobelPixel; // current sobel result becomes new center
 
-                // write the previous pixel (compCol-1) into the output buffer
                 if (compCol > 0) begin
-                    if (compCol == 1) begin
-                        outBuf[0] <= 8'h00; // the border pixel is 0                  
-                    end else if (p_center == 8'hFF && p_left == 8'h00 && sobelPixel == 8'h00) begin
-                        outBuf[compCol - 1] <= 8'h00; // if we see that its left and right neighbors are 0 it probably is noise so we put it to 0
+                    // if center is white but both neighbors are black, it is isolated noise so force it to black
+                    if (p_center == 8'hFF && p_left == 8'h00 && sobelPixel == 8'h00) begin
+                        outBuf[compCol - 1] <= 8'h00; // noise removed
                     end else begin
-                        outBuf[compCol - 1] <= p_center; // otherewise we put the pixel value computed from sobel
+                        outBuf[compCol - 1] <= (compCol - 1 == 0) ? 8'h00 : p_center; // keep filtered center (if it is the first column we force it to black)
                     end
                 end
 
                 if (compCol == (IMG_WIDTH - 1)) begin
-                    outBuf[IMG_WIDTH - 1] <= 8'h00; // we set the border pixel to 0
-                    compCol      <= {COL_BITS{1'b0}}; 
-                    writeWordIdx <= {WORD_BITS{1'b0}};
-                    state        <= WRITE_REQ; 
+                    outBuf[IMG_WIDTH - 1] <= 8'h00; // right border is forced to black
+                    compCol <= {COL_BITS{1'b0}}; // reset column counter for next processed row
+                    writeWordIdx <= {WORD_BITS{1'b0}}; // reset write word index before starting output burst writes
+                    state   <= WRITE_REQ; // row is complete, move to write phase
                 end else begin
-                    compCol <= compCol + 1;
+                    compCol <= compCol + 1; // continue with next column of the same row
                 end
             end
 
