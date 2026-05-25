@@ -54,18 +54,19 @@ localparam integer WORD_BITS = 8;   // since each word is 4 pixels, we need 8 bi
 
 // FSM states
 localparam [3:0]
-    IDLE        = 4'd0,
-    INIT        = 4'd1,
-    LOAD_REQ    = 4'd2,   
-    LOAD_SETUP  = 4'd3,   
-    LOAD_BURST  = 4'd4,   
-    COMPUTE     = 4'd5,   
-    WRITE_REQ   = 4'd6,   
-    WRITE_SETUP = 4'd7,   
-    WRITE_BURST = 4'd8,   
-    WRITE_END   = 4'd9,   
-    ADVANCE     = 4'd10,  
-    DONE        = 4'd11;
+    IDLE          = 4'd0,
+    INIT          = 4'd1,
+    LOAD_REQ      = 4'd2,
+    LOAD_SETUP    = 4'd3,
+    LOAD_BURST    = 4'd4,
+    COMPUTE       = 4'd5,
+    WRITE_REQ     = 4'd6,
+    WRITE_SETUP   = 4'd7,
+    WRITE_BURST   = 4'd8,
+    WRITE_END     = 4'd9,
+    ADVANCE       = 4'd10,
+    DONE          = 4'd11,
+    BUS_ERROR_END = 4'd12;
 
 reg [3:0] state;
 
@@ -98,8 +99,6 @@ reg [COL_BITS-1:0]  compCol; // is the current column being processed
 reg [1:0]           loadBufIdx; // which of the line buffer of above is now being loaded with the new row  
 reg [WORD_BITS-1:0] wordIdx; // which 32-bit word is being loaded from memory into a line buffer
 reg [WORD_BITS-1:0] writeWordIdx; // which 32-bit word is being written from the output buffer to memory 
-reg [5:0]           loadBurstWords; // how many words are being loaded in the current burst (since the burst size can be less than 16 words for the last burst of a row)
-reg [5:0]           writeBurstWords; // how many words are being written in the current burst (since the burst size can be less than 16 words for the last burst of a row) so same as above but for output data
 reg [8:0]           writeCount; // words left to send in the current write burst
 reg [1:0]           prefillCount; // how many input line buffers have already been filled since before starting the computation we need to fille the 3 line buffers 
 reg [31:0]          loadAddrReg; // current memory address being read from
@@ -198,8 +197,6 @@ always @(posedge clock) begin
         loadBufIdx    <= 2'd0;
         wordIdx       <= {WORD_BITS{1'b0}};
         writeWordIdx  <= {WORD_BITS{1'b0}};
-        loadBurstWords <= 6'd0;
-        writeBurstWords <= 6'd0;
         writeCount    <= 9'd0;
         compCol       <= {COL_BITS{1'b0}};
         prefillCount  <= 2'd0;
@@ -255,7 +252,6 @@ always @(posedge clock) begin
                 readNotWriteOut     <= 1'b1; // we set it to one since we are reading from the bus 
                 byteEnablesOut      <= 4'hF; // we set all the byte enables to 1 since we want to read a full word
                 burstSizeOut        <= loadChunkWords - 8'd1; // we set the burst size to the number of words we want to read in this burst (minus 1 since the burst is +1 the burst size)
-                loadBurstWords      <= loadChunkWords; // we save the burst size in a reg to use it later
                 addrDataOutReg      <= loadAddrReg; // we set the address to read from to the current load address reg
                 state               <= LOAD_BURST;
             end
@@ -263,7 +259,7 @@ always @(posedge clock) begin
             LOAD_BURST: begin
                 if (busErrorIn) begin
                     errorReg <= 1'b1;
-                    state    <= IDLE;
+                    state    <= BUS_ERROR_END;
                 end else begin
                     if (dataValidReg) begin
                         case (loadBufIdx) // we switch what line buffer we load based on the loadBufIdx, and we load the 4 pixels of the current word based on the wordIdx
@@ -348,7 +344,6 @@ always @(posedge clock) begin
                 readNotWriteOut     <= 1'b0; // we want to write so is set to 0
                 byteEnablesOut      <= 4'hF; // we write a full word
                 burstSizeOut        <= writeChunkWords - 8'd1;
-                writeBurstWords     <= writeChunkWords; //we save the burst size in a reg to use it later 
                 addrDataOutReg      <= writeAddrReg; // we set the address to write to to the current write address reg
                 writeCount          <= {3'd0, writeChunkWords} - 9'd1; 
                 state               <= WRITE_BURST; 
@@ -357,7 +352,7 @@ always @(posedge clock) begin
             WRITE_BURST: begin
                 if (busErrorIn) begin
                     errorReg <= 1'b1;
-                    state    <= IDLE;
+                    state    <= BUS_ERROR_END;
                 end else begin
                     if (!busyIn && !writeCount[8]) begin // write count is decremented by 1 at every word written, so when we finish the word written it does 0 - 1 so it sets the 9th bit to 1 since it becomes negative so we use the 9th bit to check if we have finished
                         addrDataOutReg  <= outWord; // outword is the word that pack the 4 sobel pixel
@@ -402,7 +397,13 @@ always @(posedge clock) begin
 
             DONE: begin // we have finished we set the done reg to signal if the cpu was polling that we finished
                 doneReg <= 1'b1;
-                state   <= IDLE; 
+                state   <= IDLE;
+            end
+
+            BUS_ERROR_END: begin
+                // master always terminates the transaction in error
+                endTransactionOut <= 1'b1;
+                state             <= IDLE;
             end
 
             default: begin
