@@ -558,8 +558,7 @@ module or1420SingleCore ( input wire         clock12MHz,
   accMotion #(
     .customId(8'h0F),
     .IMG_WIDTH(640),
-    .IMG_HEIGHT(480),
-    .MAX_BURST_WORDS(32)
+    .IMG_HEIGHT(480)
 ) acc_motion_inst (
     .start(s_cpu1CiStart),
     .clock(s_systemClock),
