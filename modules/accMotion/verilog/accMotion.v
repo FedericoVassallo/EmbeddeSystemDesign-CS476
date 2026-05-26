@@ -38,7 +38,7 @@ module accMotion #(
 );
 
 localparam integer WORDS_PER_ROW  = IMG_WIDTH / 4;
-localparam integer MAX_BURST_WORDS = 8;
+localparam integer MAX_BURST_WORDS = 32;
 localparam integer ROW_BITS  = 9;
 localparam integer WORD_BITS = 8;
 
