@@ -29,6 +29,8 @@
 #define FRAME_PROFILE_LOG 1
 #define FRAME_PROFILE_INTERVAL 15u
 #define FRAME_PIXELS (640*480)
+#define MOTION_WIDTH 320u
+#define MOTION_HEIGHT 240u
 #define NR_CAPTURE_BUFFERS 3u
 
 #define CAMERA_CI_REG_FRAMEBUFFER   5u
@@ -91,8 +93,8 @@ volatile uint8_t  sobelB[FRAME_PIXELS];    // edge map, buffer B
 // accelerator writes the other, then we ping-pong. This prevents the
 // visible tearing/flicker that happens when HDMI scans-out a buffer that
 // the Motion accelerator is concurrently writing to.
-volatile uint8_t  motionA[FRAME_PIXELS];
-volatile uint8_t  motionB[FRAME_PIXELS];
+volatile uint16_t motionA[FRAME_PIXELS];
+volatile uint16_t motionB[FRAME_PIXELS];
 
 int main () {
   volatile int result;
@@ -104,8 +106,8 @@ int main () {
 #endif
   volatile uint8_t *sobelCurr     = sobelA;    // this frame's edges
   volatile uint8_t *sobelPrev     = sobelB;    // last frame's edges
-  volatile uint8_t *motionDisplay = motionA;   // what HDMI is currently showing
-  volatile uint8_t *motionDraw    = motionB;   // what the accelerator writes into
+  volatile uint16_t *motionDisplay = motionA;  // what HDMI is currently showing
+  volatile uint16_t *motionDraw    = motionB;  // what the accelerator writes into
   volatile uint8_t *captureBuffers[NR_CAPTURE_BUFFERS] = {grayscaleA, grayscaleB, grayscaleC};
 #ifdef __OR1300__
   icache_write_cfg(CACHE_SIZE_8K|CACHE_FOUR_WAY|CACHE_REPLACE_LRU);
@@ -119,10 +121,10 @@ int main () {
   camParams = initOv7670(VGA);
   printf("Done!\n");
   printf("NrOfPixels : %d\n", camParams.nrOfPixelsPerLine);
-  result = (camParams.nrOfPixelsPerLine <= 320) ? camParams.nrOfPixelsPerLine | 0x80000000 : camParams.nrOfPixelsPerLine;
+  result = MOTION_WIDTH | 0x80000000; // 320-wide RGB565 buffer, doubled to 640 by VGA
   vga[0] = swap_u32(result);
   printf("NrOfLines  : %d\n", camParams.nrOfLinesPerImage);
-  result = (camParams.nrOfLinesPerImage <= 240) ? camParams.nrOfLinesPerImage | 0x80000000 : camParams.nrOfLinesPerImage;
+  result = MOTION_HEIGHT | 0x80000000; // 240-high RGB565 buffer, doubled to 480 by VGA
   vga[1] = swap_u32(result);
   printf("PCLK (kHz) : %d\n", camParams.pixelClockInkHz );
   printf("FPS        : %d\n", camParams.framesPerSecond );
@@ -132,10 +134,12 @@ int main () {
   for (int i = 0; i < FRAME_PIXELS; i++) {
       grayscaleA[i] = 0; grayscaleB[i] = 0; grayscaleC[i] = 0;
       sobelA[i]     = 0; sobelB[i]     = 0;
+  }
+  for (int i = 0; i < FRAME_PIXELS; i++) {
       motionA[i]    = 0; motionB[i]    = 0;
   }
 
-  vga[2] = swap_u32(2); // 2 -> grayscale display mode
+  vga[2] = swap_u32(1); // 1 -> RGB565 display mode
   vga[3] = swap_u32((uint32_t) motionDisplay);
 
   uint32_t cameraCounter = camera_frame_counter();
@@ -194,7 +198,7 @@ int main () {
     // Swap motion pointers: the buffer we just wrote becomes the display
     // buffer for the next iteration; HDMI's old display buffer is now free
     // for the accelerator to overwrite.
-    volatile uint8_t *tempM = motionDisplay;
+    volatile uint16_t *tempM = motionDisplay;
     motionDisplay = motionDraw;
     motionDraw    = tempM;
     vga[3] = swap_u32((uint32_t) motionDisplay);

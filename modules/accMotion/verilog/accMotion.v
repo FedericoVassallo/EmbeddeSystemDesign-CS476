@@ -11,10 +11,10 @@
 //   7  read back dst  address
 //
 // Operation sequence after start:
-//   For each row in [0 .. IMG_HEIGHT-1]:
+//   For each sampled row in [0, 2, 4, .. IMG_HEIGHT-2]:
 //     1. Load one row from srcA into lineBufA (via burst reads from SDRAM).
 //     2. Load one row from srcB into lineBufB (via burst reads from SDRAM).
-//     3. XOR them into outBuf, one word per clock cycle.
+//     3. Build a half-resolution RGB565 overlay: current edges white, new edges red.
 //     4. Write outBuf back to SDRAM (via burst writes).
 //   Then signal done.
 //
@@ -59,9 +59,13 @@ module accMotion #(
 );
 // ─── Derived constants ────────────────────────────────────────────────────────
 localparam integer WORDS_PER_ROW = IMG_WIDTH / 4;   // 160 for 640-wide image
+localparam integer OUT_WIDTH = IMG_WIDTH / 2;
+localparam integer OUT_HEIGHT = IMG_HEIGHT / 2;
+localparam integer OUT_WORDS_PER_ROW = OUT_WIDTH / 2; // 160 RGB565 words for 320-wide output
 // Bit widths — correct for the 640x480 defaults.
 localparam integer ROW_BITS  = 9;   // ceil(log2(480))
 localparam integer WORD_BITS = 8;   // ceil(log2(160))
+localparam integer OUT_WORD_BITS = 9; // ceil(log2(320))
 
 // ─── FSM state encoding ───────────────────────────────────────────────────────
 localparam [3:0]
@@ -73,7 +77,7 @@ localparam [3:0]
     S_LOADB_REQ   = 4'd5,
     S_LOADB_SETUP = 4'd6,
     S_LOADB_BURST = 4'd7,
-    S_COMPUTE     = 4'd8,   // XOR one word per clock into outBuf
+    S_COMPUTE     = 4'd8,   // expand one source word into two RGB565 words
     S_WRITE_REQ   = 4'd9,
     S_WRITE_SETUP = 4'd10,
     S_WRITE_BURST = 4'd11,
@@ -96,17 +100,17 @@ assign result =
     32'd0;
 
 // ─── Line buffers ─────────────────────────────────────────────────────────────
-// Store as 32-bit words rather than bytes, since the XOR is naturally 32-bit
-// wide and we never need byte-granular access (unlike accSobel which needs
-// neighboring pixels). This halves the LUT cost of the muxes vs a byte array.
+// Store as 32-bit words. Source rows contain four 8-bit pixels per word; the
+// output row contains two RGB565 pixels per word. The output is downsampled
+// by 2 horizontally and vertically to reduce SDRAM traffic.
 reg [31:0] lineBufA [0:WORDS_PER_ROW-1];
 reg [31:0] lineBufB [0:WORDS_PER_ROW-1];
-reg [31:0] outBuf   [0:WORDS_PER_ROW-1];
+reg [31:0] outBuf   [0:OUT_WORDS_PER_ROW-1];
 
 // ─── Counters and shadow address registers ────────────────────────────────────
 reg [ROW_BITS-1:0]  rowProc;       // row currently being processed (0..IMG_HEIGHT-1)
 reg [WORD_BITS-1:0] wordIdx;       // counts received words during a load burst (0..159)
-reg [WORD_BITS-1:0] writeWordIdx;  // counts words sent during a write burst
+reg [OUT_WORD_BITS-1:0] writeWordIdx;  // counts words sent during a write burst
 reg [WORD_BITS-1:0] computeIdx;    // index into lineBufA/B during S_COMPUTE
 reg [5:0]           loadBurstWords;
 reg [5:0]           writeBurstWords;
@@ -117,7 +121,7 @@ reg [31:0]          writeAddrReg;  // next SDRAM address for dst writes
 
 // Words still needed for the *current row* during a load burst phase.
 wire [8:0] loadWordsRemaining  = WORDS_PER_ROW - wordIdx;
-wire [8:0] writeWordsRemaining = WORDS_PER_ROW - writeWordIdx;
+wire [8:0] writeWordsRemaining = OUT_WORDS_PER_ROW - writeWordIdx;
 // Burst chunk size: capped at MAX_BURST_WORDS (== 16 by default → param matches Sobel).
 // Use a 6-bit sized constant via concatenation-with-truncation to avoid any
 // tool-specific quirks with part-selects on integer parameters.
@@ -141,9 +145,21 @@ reg        dataValidOutReg;
 assign addressDataOut = addrDataOutReg;
 assign dataValidOut   = dataValidOutReg;
 
-// ─── XOR datapath (purely combinational) ──────────────────────────────────────
-// One word from each line buffer XORed together.
-wire [31:0] xorWord = lineBufA[computeIdx] ^ lineBufB[computeIdx];
+// ─── Motion overlay datapath (purely combinational) ──────────────────────────
+// Source pixels are 8-bit Sobel values. Output pixels are RGB565:
+// current edge = white, newly appeared edge = red.
+function [15:0] motionPixel;
+    input [7:0] curr;
+    input [7:0] prev;
+    begin
+        motionPixel = (curr != 8'd0 && prev == 8'd0) ? 16'hF800 :
+                      (curr != 8'd0)                 ? 16'hFFFF :
+                                                        16'h0000;
+    end
+endfunction
+
+wire [31:0] motionWord = {motionPixel(lineBufA[computeIdx][23:16], lineBufB[computeIdx][23:16]),
+                          motionPixel(lineBufA[computeIdx][7:0],   lineBufB[computeIdx][7:0])};
 
 // doWrite: fire one word onto the bus when the burst is active and bus is ready
 wire doWrite = (state == S_WRITE_BURST) & ~writeCount[8] & ~busyIn;
@@ -159,7 +175,7 @@ always @(posedge clock) begin
         errorReg             <= 1'b0;
         rowProc              <= {ROW_BITS{1'b0}};
         wordIdx              <= {WORD_BITS{1'b0}};
-        writeWordIdx         <= {WORD_BITS{1'b0}};
+        writeWordIdx         <= {OUT_WORD_BITS{1'b0}};
         computeIdx           <= {WORD_BITS{1'b0}};
         loadBurstWords       <= 6'd0;
         writeBurstWords      <= 6'd0;
@@ -276,7 +292,7 @@ always @(posedge clock) begin
                         if ((wordIdx + {7'd0, dataValidReg}) < WORDS_PER_ROW) begin
                             state <= S_LOADB_REQ;
                         end else begin
-                            // Both rows loaded → compute the XOR.
+                            // Both rows loaded: build the half-resolution RGB565 overlay.
                             wordIdx    <= {WORD_BITS{1'b0}};
                             computeIdx <= {WORD_BITS{1'b0}};
                             state      <= S_COMPUTE;
@@ -285,15 +301,16 @@ always @(posedge clock) begin
                 end
             end
             //------------------------------------------------------------------
-            // Compute: XOR lineBufA[i] ^ lineBufB[i] into outBuf[i], one
-            // word per clock cycle. After WORDS_PER_ROW cycles, start the
+            // Compute: sample pixels 0 and 2 from each source word, producing
+            // one output word with two RGB565 pixels.
+            // After WORDS_PER_ROW cycles, start the
             // write burst back to SDRAM.
             //------------------------------------------------------------------
             S_COMPUTE: begin
-                outBuf[computeIdx] <= xorWord;
+                outBuf[computeIdx] <= motionWord;
                 if (computeIdx == (WORDS_PER_ROW - 1)) begin
                     computeIdx   <= {WORD_BITS{1'b0}};
-                    writeWordIdx <= {WORD_BITS{1'b0}};
+                    writeWordIdx <= {OUT_WORD_BITS{1'b0}};
                     state        <= S_WRITE_REQ;
                 end else begin
                     computeIdx <= computeIdx + 1;
@@ -337,7 +354,7 @@ always @(posedge clock) begin
             S_WRITE_END: begin
                 endTransactionOut <= 1'b1;
                 writeAddrReg      <= writeAddrReg + {writeBurstWords, 2'b00};
-                if (writeWordIdx < WORDS_PER_ROW) begin
+                if (writeWordIdx < OUT_WORDS_PER_ROW) begin
                     // Row not fully written yet → request another burst.
                     state <= S_WRITE_REQ;
                 end else begin
@@ -346,9 +363,11 @@ always @(posedge clock) begin
             end
             //------------------------------------------------------------------
             S_ADVANCE: begin
-                if (rowProc < (IMG_HEIGHT - 1)) begin
+                if (rowProc < (OUT_HEIGHT - 1)) begin
                     rowProc <= rowProc + 1;
                     wordIdx <= {WORD_BITS{1'b0}};
+                    loadAAddrReg <= loadAAddrReg + IMG_WIDTH;
+                    loadBAddrReg <= loadBAddrReg + IMG_WIDTH;
                     state   <= S_LOADA_REQ;
                 end else begin
                     state <= S_DONE;
