@@ -7,7 +7,6 @@
 //   5  read back dest address
 //
 // Per row: prefill 3 line buffers → compute Sobel row → write result.
-// REQ and SETUP states are shared for both bus phases (like ramDmaCi).
 
 module accSobel #(
     parameter [7:0]   customId   = 8'h0E,
