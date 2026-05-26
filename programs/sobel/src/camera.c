@@ -7,74 +7,58 @@
 #include <cache.h>
 #endif
 
-// ── Sobel hardware accelerator (CI 0x0E) ─────────────────────────────────────
-#define SOBEL_ACC_REG_STATUS   0u   // read: {error, busy, done}
-#define SOBEL_ACC_REG_SRC      1u   // write: source grayscale frame address
-#define SOBEL_ACC_REG_DST      2u   // write: destination edge-map address
-#define SOBEL_ACC_REG_CONTROL  3u   // write: bit 0 = start
-#define SOBEL_ACC_STATUS_DONE  0x1u
-#define SOBEL_ACC_STATUS_BUSY  0x2u
-#define SOBEL_ACC_STATUS_ERROR 0x4u
+// accSobel.v hardware accelerator (CI 0x0E)
+static const uint32_t SOBEL_ACC_REG_STATUS   = 0;    // read {error, busy, done}
+static const uint32_t SOBEL_ACC_REG_SRC      = 1;    // write source grayscale frame address
+static const uint32_t SOBEL_ACC_REG_DST      = 2;    // write destination edge-map address
+static const uint32_t SOBEL_ACC_REG_CONTROL  = 3;    // write bit 0 = start
+static const uint32_t SOBEL_ACC_STATUS_BUSY  = 0x2;
 
-// ── Motion hardware accelerator (CI 0x0F) ────────────────────────────────────
-#define MOTION_ACC_REG_STATUS  0u   // read: {error, busy, done}
-#define MOTION_ACC_REG_SRCA    1u   // write: source A address (current edge frame)
-#define MOTION_ACC_REG_SRCB    2u   // write: source B address (previous edge frame)
-#define MOTION_ACC_REG_DST     3u   // write: destination address (motion buffer)
-#define MOTION_ACC_REG_CONTROL 4u   // write: bit 0 = start
-#define MOTION_ACC_STATUS_DONE  0x1u
-#define MOTION_ACC_STATUS_BUSY  0x2u
-#define MOTION_ACC_STATUS_ERROR 0x4u
+// accMotion.v hardware accelerator (CI 0x0F)
+static const uint32_t MOTION_ACC_REG_STATUS  = 0;    // read {error, busy, done}
+static const uint32_t MOTION_ACC_REG_SRCA    = 1;    // write source A address (current Sobel frame)
+static const uint32_t MOTION_ACC_REG_SRCB    = 2;    // write source B address (previous Sobel frame)
+static const uint32_t MOTION_ACC_REG_DST     = 3;    // write destination address (motion buffer)
+static const uint32_t MOTION_ACC_REG_CONTROL = 4;    // write bit 0 = start
+static const uint32_t MOTION_ACC_STATUS_BUSY  = 0x2;
 
-#define FRAME_PROFILE_LOG 1
-#define FRAME_PROFILE_INTERVAL 15u
-#define FRAME_PIXELS (640*480)
-#define NR_CAPTURE_BUFFERS 3u
+// camera CI (CI 0x07)
+static const uint32_t CAMERA_CI_FRAME_WRITE_ADDR   = 5; // command to set the camera's address for writing the next frame into
+static const uint32_t CAMERA_CI_FRAME_COUNTER = 8; // command to read the number of frames captured from camera.v
 
-#define CAMERA_CI_REG_FRAMEBUFFER   5u
-#define CAMERA_CI_REG_FRAME_COUNTER 8u
+#define FRAME_PROFILE_INTERVAL 15
+#define FRAME_PIXELS           (640 * 480)
+#define NR_CAPTURE_BUFFERS     3
 
+// function to send command to the custom instruction for motion accelerator (address 0xF)
 static inline uint32_t motion_acc_ci(uint32_t a, uint32_t b) {
     uint32_t r;
     asm volatile("l.nios_rrr %[out],%[inA],%[inB],0xF"
-                 : [out]"=r"(r)
-                 : [inA]"r"(a), [inB]"r"(b));
+                 : [out]"=r"(r): [inA]"r"(a), [inB]"r"(b));
     return r;
 }
-
+// function to send command to the custom instruction for Sobel accelerator (address 0xE)
 static inline uint32_t sobel_acc_ci(uint32_t a, uint32_t b)
 {
     uint32_t r;
     asm volatile("l.nios_rrr %[out],%[inA],%[inB],0xE"
-                 : [out]"=r"(r)
-                 : [inA]"r"(a), [inB]"r"(b));
+                 : [out]"=r"(r): [inA]"r"(a), [inB]"r"(b));
     return r;
 }
-
+// function to send command to the custom instruction for camera CI (address 0x7)
 static inline uint32_t camera_ci(uint32_t a, uint32_t b)
 {
     uint32_t r;
     asm volatile("l.nios_rrr %[out],%[inA],%[inB],0x7"
-                 : [out]"=r"(r)
-                 : [inA]"r"(a), [inB]"r"(b));
+                 : [out]"=r"(r): [inA]"r"(a), [inB]"r"(b));
     return r;
 }
-
-static inline uint32_t camera_frame_counter(void)
-{
-    return camera_ci(CAMERA_CI_REG_FRAME_COUNTER, 0);
-}
-
-static inline void camera_set_framebuffer(uint32_t framebuffer)
-{
-    camera_ci(CAMERA_CI_REG_FRAMEBUFFER, framebuffer);
-}
-
+// helper function to wait for the next camera frame, returns the number of frames that have passed since lastCounter (to check for frame drops)
 static uint32_t wait_for_camera_frame(uint32_t *lastCounter)
 {
     uint32_t now;
     do {
-        now = camera_frame_counter();
+        now = camera_ci(CAMERA_CI_FRAME_COUNTER, 0);
     } while (now == *lastCounter);
 
     uint32_t delta = now - *lastCounter;
@@ -85,12 +69,8 @@ static uint32_t wait_for_camera_frame(uint32_t *lastCounter)
 volatile uint8_t  grayscaleA[FRAME_PIXELS];
 volatile uint8_t  grayscaleB[FRAME_PIXELS];
 volatile uint8_t  grayscaleC[FRAME_PIXELS];
-volatile uint8_t  sobelA[FRAME_PIXELS];    // edge map, buffer A
-volatile uint8_t  sobelB[FRAME_PIXELS];    // edge map, buffer B
-// Double-buffered motion output: HDMI displays one buffer while the
-// accelerator writes the other, then we ping-pong. This prevents the
-// visible tearing/flicker that happens when HDMI scans-out a buffer that
-// the Motion accelerator is concurrently writing to.
+volatile uint8_t  sobelA[FRAME_PIXELS];
+volatile uint8_t  sobelB[FRAME_PIXELS];
 volatile uint8_t  motionA[FRAME_PIXELS];
 volatile uint8_t  motionB[FRAME_PIXELS];
 
@@ -98,10 +78,8 @@ int main () {
   volatile int result;
   volatile unsigned int *vga = (unsigned int *) 0X50000020;
   camParameters camParams;
-#if FRAME_PROFILE_LOG
   volatile uint32_t cycles, stall, idle;
   volatile uint32_t frameCounter = 0;
-#endif
   volatile uint8_t *sobelCurr     = sobelA;    // this frame's edges
   volatile uint8_t *sobelPrev     = sobelB;    // last frame's edges
   volatile uint8_t *motionDisplay = motionA;   // what HDMI is currently showing
@@ -127,79 +105,75 @@ int main () {
   printf("PCLK (kHz) : %d\n", camParams.pixelClockInkHz );
   printf("FPS        : %d\n", camParams.framesPerSecond );
 
-  // Clear all buffers so the very first displayed frame is black rather
-  // than uninitialised SDRAM.
+  // Clear all buffers
   for (int i = 0; i < FRAME_PIXELS; i++) {
       grayscaleA[i] = 0; grayscaleB[i] = 0; grayscaleC[i] = 0;
       sobelA[i]     = 0; sobelB[i]     = 0;
       motionA[i]    = 0; motionB[i]    = 0;
   }
 
-  vga[2] = swap_u32(2); // 2 -> grayscale display mode
+  vga[2] = swap_u32(2); // 2 for grayscale display mode
   vga[3] = swap_u32((uint32_t) motionDisplay);
 
-  uint32_t cameraCounter = camera_frame_counter();
+  uint32_t cameraCounter = camera_ci(CAMERA_CI_FRAME_COUNTER, 0);
   uint32_t writingIndex = 0;
 
-  enableContinues((uint32_t)captureBuffers[writingIndex]);
-  wait_for_camera_frame(&cameraCounter);
-  camera_set_framebuffer((uint32_t)captureBuffers[1]);
-  wait_for_camera_frame(&cameraCounter);
+  ///////
+  // TO CHECK MAYBE WE CAN SUBSTITUTE WITH TAKEIMAGE BLOCKING FOR THE FIRST 2 FRAMES, THEN START CONTINUOUS MODE
+  ////////
+
+  enableContinues((uint32_t)captureBuffers[writingIndex]); // tell camera to start writing into the first capture buffer
+  wait_for_camera_frame(&cameraCounter); // we wait for the first frame to be captured
+  camera_ci(CAMERA_CI_FRAME_WRITE_ADDR, (uint32_t)captureBuffers[1]); // we set the camera to set the seoond capture frame
+  wait_for_camera_frame(&cameraCounter); // we wait for the second frame to be captured
   writingIndex = 1;
 
-#if FRAME_PROFILE_LOG
   printf("Continuous capture enabled, camera frame counter %d\n", cameraCounter);
-#endif
 
   while (1) {
-    uint32_t completedIndex = (writingIndex + 2u) % NR_CAPTURE_BUFFERS;
-    uint32_t nextIndex = (writingIndex + 1u) % NR_CAPTURE_BUFFERS;
+    uint32_t completedIndex = (writingIndex + 2) % NR_CAPTURE_BUFFERS;
+    uint32_t nextIndex = (writingIndex + 1) % NR_CAPTURE_BUFFERS;
     volatile uint8_t *completedFrame = captureBuffers[completedIndex];
 
-    camera_set_framebuffer((uint32_t)captureBuffers[nextIndex]);
+    camera_ci(CAMERA_CI_FRAME_WRITE_ADDR, (uint32_t)captureBuffers[nextIndex]);
 
-#if FRAME_PROFILE_LOG
     asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(7)); // start profiling
-#endif
 
-    // ── Fire the hardware Sobel accelerator ──────────────────────────────────
+    // we start the Sobel accelerator on the completed camera frame
     sobel_acc_ci(SOBEL_ACC_REG_SRC, (uint32_t)completedFrame);
-    sobel_acc_ci(SOBEL_ACC_REG_DST, (uint32_t)sobelCurr);
-    sobel_acc_ci(SOBEL_ACC_REG_CONTROL, 1u); // start
+    sobel_acc_ci(SOBEL_ACC_REG_DST, (uint32_t)sobelCurr); // we set the write address of the result sobel frame to sobelCurr
+    sobel_acc_ci(SOBEL_ACC_REG_CONTROL, 1); // we set the signal to start by putting 1 in valueB[0]
     volatile uint32_t acc_status;
-    volatile uint32_t acc_timeout = 10000000u;
+    volatile uint32_t acc_timeout = 10000000;
     do {
         acc_status = sobel_acc_ci(SOBEL_ACC_REG_STATUS, 0);
         acc_timeout--;
     } while ((acc_status & SOBEL_ACC_STATUS_BUSY) && acc_timeout != 0);
 
-    // ── Fire the hardware Motion (XOR) accelerator ───────────────────────────
-    // Writes into motionDraw — the buffer NOT currently being scanned by HDMI.
-    motion_acc_ci(MOTION_ACC_REG_SRCA, (uint32_t)sobelCurr);
-    motion_acc_ci(MOTION_ACC_REG_SRCB, (uint32_t)sobelPrev);
-    motion_acc_ci(MOTION_ACC_REG_DST,  (uint32_t)motionDraw);
-    motion_acc_ci(MOTION_ACC_REG_CONTROL, 1u);
+    // we start the motion accelerator to compare this frame's edges with the previous frame's edges and write the result into motionDraw
+    motion_acc_ci(MOTION_ACC_REG_SRCA, (uint32_t)sobelCurr); // set source A to this frame's Sobel edges
+    motion_acc_ci(MOTION_ACC_REG_SRCB, (uint32_t)sobelPrev); // set source B to previous frame's Sobel edges
+    motion_acc_ci(MOTION_ACC_REG_DST,  (uint32_t)motionDraw); // write the result into the buffer motionDraw
+    motion_acc_ci(MOTION_ACC_REG_CONTROL, 1); // we set the signal to start by putting 1 in valueB[0]
     volatile uint32_t mot_status;
-    volatile uint32_t mot_timeout = 10000000u;
+    volatile uint32_t mot_timeout = 10000000;
     do {
         mot_status = motion_acc_ci(MOTION_ACC_REG_STATUS, 0);
         mot_timeout--;
     } while ((mot_status & MOTION_ACC_STATUS_BUSY) && mot_timeout != 0);
 
-    // Swap sobel pointers: this frame's edges become "previous" for next frame.
+    // we swap the pointer to the sobel buffers, so that the current sobel frame becomes the previous sobel, and the next accelerator result will be written into the other buffer 
     volatile uint8_t *temp = sobelPrev;
     sobelPrev = sobelCurr;
     sobelCurr = temp;
 
-    // Swap motion pointers: the buffer we just wrote becomes the display
-    // buffer for the next iteration; HDMI's old display buffer is now free
-    // for the accelerator to overwrite.
+    // we swap the pointers for motion display and motion draw, same logic as for the sobel buffers
     volatile uint8_t *tempM = motionDisplay;
     motionDisplay = motionDraw;
     motionDraw    = tempM;
     vga[3] = swap_u32((uint32_t) motionDisplay);
 
-#if FRAME_PROFILE_LOG
+    // profiling CI for stopping profiling counter and saving results
     asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
@@ -209,14 +183,13 @@ int main () {
                acc_status, acc_timeout, mot_status, mot_timeout, cycles, stall, idle);
     }
     frameCounter++;
-#endif
 
     uint32_t cameraDelta = wait_for_camera_frame(&cameraCounter);
-#if FRAME_PROFILE_LOG
+
     if (cameraDelta != 1u) {
         printf("camera frame skip: delta %d counter %d\n", cameraDelta, cameraCounter);
     }
-#endif
+
     writingIndex = nextIndex;
   }
 }
