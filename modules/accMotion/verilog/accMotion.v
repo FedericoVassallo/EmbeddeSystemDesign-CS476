@@ -1,35 +1,17 @@
-// Streaming Motion (XOR) accelerator — bus master, CI id 0x0F.
-//
 // CI protocol (valueA):
 //   0  read  status {error, busy, done}
-//   1  write source-A frame address (valueB)  -- sobelCurr
-//   2  write source-B frame address (valueB)  -- sobelPrev
-//   3  write destination address    (valueB)  -- motion
-//   4  control: valueB[0]=1 starts the accelerator (ignored while busy)
+//   1  write source-A frame address (valueB)
+//   2  write source-B frame address (valueB)
+//   3  write destination address    (valueB)
+//   4  control: valueB[0]=1 starts (ignored while busy)
 //   5  read back srcA address
 //   6  read back srcB address
 //   7  read back dst  address
-//
-// Operation sequence after start:
-//   For each row in [0 .. IMG_HEIGHT-1]:
-//     1. Load one row from srcA into lineBufA (via burst reads from SDRAM).
-//     2. Load one row from srcB into lineBufB (via burst reads from SDRAM).
-//     3. XOR them into outBuf, one word per clock cycle.
-//     4. Write outBuf back to SDRAM (via burst writes).
-//   Then signal done.
-//
-// Assumptions: IMG_WIDTH * IMG_HEIGHT is a multiple of 4 (true for 640x480).
-//
-// Note: The XOR operation has no neighborhood dependency, so we *could*
-// process it as one big linear stream rather than row-by-row. The row-based
-// approach is used here for consistency with accSobel and to keep burst
-// addressing simple. It costs at most one extra request-grant per row, which
-// is negligible compared to the SDRAM read/write throughput.
+
 module accMotion #(
-    parameter [7:0]   customId         = 8'h0F,
-    parameter integer IMG_WIDTH        = 640,
-    parameter integer IMG_HEIGHT       = 480,
-    parameter integer MAX_BURST_WORDS  = 8
+    parameter [7:0]   customId   = 8'h0F,
+    parameter integer IMG_WIDTH  = 640,
+    parameter integer IMG_HEIGHT = 480
 ) (
     input  wire        start,
                        clock,
@@ -39,16 +21,13 @@ module accMotion #(
     input  wire [7:0]  ciN,
     output wire        done,
     output wire [31:0] result,
-    // Bus-master request/grant
     output wire        requestTransaction,
     input  wire        transactionGranted,
-    // Bus inputs
     input  wire        endTransactionIn,
                        dataValidIn,
                        busErrorIn,
                        busyIn,
     input  wire [31:0] addressDataIn,
-    // Bus outputs
     output reg         beginTransactionOut,
                        readNotWriteOut,
                        endTransactionOut,
@@ -57,37 +36,31 @@ module accMotion #(
     output reg  [7:0]  burstSizeOut,
     output wire [31:0] addressDataOut
 );
-// ─── Derived constants ────────────────────────────────────────────────────────
-localparam integer WORDS_PER_ROW = IMG_WIDTH / 4;   // 160 for 640-wide image
-// Bit widths — correct for the 640x480 defaults.
-localparam integer ROW_BITS  = 9;   // ceil(log2(480))
-localparam integer WORD_BITS = 8;   // ceil(log2(160))
 
-// ─── FSM state encoding ───────────────────────────────────────────────────────
+localparam integer WORDS_PER_ROW  = IMG_WIDTH / 4;
+localparam integer MAX_BURST_WORDS = 8;
+localparam integer ROW_BITS  = 9;
+localparam integer WORD_BITS = 8;
+
 localparam [3:0]
-    S_IDLE        = 4'd0,
-    S_INIT        = 4'd1,
-    S_LOADA_REQ   = 4'd2,   // assert requestTransaction for srcA read burst
-    S_LOADA_SETUP = 4'd3,   // assert beginTransaction (one cycle)
-    S_LOADA_BURST = 4'd4,   // receive srcA words
-    S_LOADB_REQ   = 4'd5,
-    S_LOADB_SETUP = 4'd6,
-    S_LOADB_BURST = 4'd7,
-    S_COMPUTE     = 4'd8,   // XOR one word per clock into outBuf
-    S_WRITE_REQ   = 4'd9,
-    S_WRITE_SETUP = 4'd10,
-    S_WRITE_BURST = 4'd11,
-    S_WRITE_END   = 4'd12,
-    S_ADVANCE     = 4'd13,  // advance to next row or finish
-    S_DONE        = 4'd14;
+    IDLE          = 4'd0,
+    INIT          = 4'd1,
+    REQ           = 4'd2,
+    SETUP         = 4'd3,
+    LOAD_BURST    = 4'd4,
+    WRITE_BURST   = 4'd5,
+    WRITE_END     = 4'd6,
+    DONE          = 4'd7,
+    BUS_ERROR_END = 4'd8;
 reg [3:0] state;
 
-// ─── CI configuration registers ──────────────────────────────────────────────
 reg [31:0] srcAAddressReg, srcBAddressReg, dstAddressReg;
 reg        doneReg, errorReg;
 wire isMyCi   = start & (ciN == customId);
-wire busyWire = (state != S_IDLE);
+wire busyWire = (state != IDLE);
 assign done   = isMyCi;
+
+// we give as an output a different result as usual depending on the Ci command, otherwise we keep 0
 assign result =
     (isMyCi & (valueA == 32'd0)) ? {29'd0, errorReg, busyWire, doneReg} :
     (isMyCi & (valueA == 32'd5)) ? srcAAddressReg :
@@ -95,87 +68,59 @@ assign result =
     (isMyCi & (valueA == 32'd7)) ? dstAddressReg  :
     32'd0;
 
-// ─── Line buffers ─────────────────────────────────────────────────────────────
-// Store as 32-bit words rather than bytes, since the XOR is naturally 32-bit
-// wide and we never need byte-granular access (unlike accSobel which needs
-// neighboring pixels). This halves the LUT cost of the muxes vs a byte array.
-reg [31:0] lineBufA [0:WORDS_PER_ROW-1];
-reg [31:0] lineBufB [0:WORDS_PER_ROW-1];
-reg [31:0] outBuf   [0:WORDS_PER_ROW-1];
+// linebuffer to hold one row of the image divided in 32 bit words
+reg [31:0] lineBuf [0:WORDS_PER_ROW-1];
 
-// ─── Counters and shadow address registers ────────────────────────────────────
-reg [ROW_BITS-1:0]  rowProc;       // row currently being processed (0..IMG_HEIGHT-1)
-reg [WORD_BITS-1:0] wordIdx;       // counts received words during a load burst (0..159)
-reg [WORD_BITS-1:0] writeWordIdx;  // counts words sent during a write burst
-reg [WORD_BITS-1:0] computeIdx;    // index into lineBufA/B during S_COMPUTE
-reg [5:0]           loadBurstWords;
-reg [5:0]           writeBurstWords;
-reg [8:0]           writeCount;    // burst countdown; [8]=1 when all words sent
-reg [31:0]          loadAAddrReg;  // next SDRAM address for srcA reads
-reg [31:0]          loadBAddrReg;  // next SDRAM address for srcB reads
-reg [31:0]          writeAddrReg;  // next SDRAM address for dst writes
+reg doingWrite;  // in the load phase when we load the srcA or srcB we set it at 0, if we are writing to the destination we set it at 1
+reg loadingSrcB; // when we are loading srcA is 0, when we are loading srcB is 1
 
-// Words still needed for the *current row* during a load burst phase.
-wire [8:0] loadWordsRemaining  = WORDS_PER_ROW - wordIdx;
-wire [8:0] writeWordsRemaining = WORDS_PER_ROW - writeWordIdx;
-// Burst chunk size: capped at MAX_BURST_WORDS (== 16 by default → param matches Sobel).
-// Use a 6-bit sized constant via concatenation-with-truncation to avoid any
-// tool-specific quirks with part-selects on integer parameters.
-localparam [5:0] MAX_BURST_W6 = MAX_BURST_WORDS[5:0];
-wire [5:0] loadChunkWords  = (loadWordsRemaining  > MAX_BURST_WORDS) ? MAX_BURST_W6 : loadWordsRemaining[5:0];
-wire [5:0] writeChunkWords = (writeWordsRemaining > MAX_BURST_WORDS) ? MAX_BURST_W6 : writeWordsRemaining[5:0];
+reg [ROW_BITS-1:0]  rowProc; // we keep track of which row we are now processing
+reg [WORD_BITS-1:0] wordIdx; // to keep track of how many words we have loaded/written
+reg [8:0]           writeCount; // to keep track of how many words we have written in the current burst
+reg [31:0]          loadAAddrReg, loadBAddrReg, writeAddrReg;
 
-// ─── Registered bus inputs (pipeline one stage for timing) ───────────────────
-reg        endTxReg, dataValidReg;
+wire [8:0] wordsRemaining = WORDS_PER_ROW - wordIdx; // the words remaining to load/write in the current row
+wire [7:0] usedBurstSize     = (wordsRemaining > MAX_BURST_WORDS) ? MAX_BURST_WORDS[7:0] : wordsRemaining[7:0];
+
+reg        endTransactionInReg, dataValidReg;
 reg [31:0] addrDataReg;
+// here we store in reg the input from the bus
 always @(posedge clock) begin
-    endTxReg     <= endTransactionIn;
+    endTransactionInReg <= endTransactionIn;
     dataValidReg <= dataValidIn;
-    addrDataReg  <= addressDataIn;
+    addrDataReg <= addressDataIn;
 end
 
-// ─── Bus output signals ───────────────────────────────────────────────────────
-assign requestTransaction = ((state == S_LOADA_REQ) | (state == S_LOADB_REQ) | (state == S_WRITE_REQ));
+assign requestTransaction = (state == REQ); // we request the bus when we are in the REQ state
 reg [31:0] addrDataOutReg;
 reg        dataValidOutReg;
 assign addressDataOut = addrDataOutReg;
 assign dataValidOut   = dataValidOutReg;
 
-// ─── XOR datapath (purely combinational) ──────────────────────────────────────
-// One word from each line buffer XORed together.
-wire [31:0] xorWord = lineBufA[computeIdx] ^ lineBufB[computeIdx];
-
-// doWrite: fire one word onto the bus when the burst is active and bus is ready
-wire doWrite = (state == S_WRITE_BURST) & ~writeCount[8] & ~busyIn;
-
-// ─── Main clocked FSM ─────────────────────────────────────────────────────────
 always @(posedge clock) begin
     if (reset) begin
-        state                <= S_IDLE;
-        srcAAddressReg       <= 32'd0;
-        srcBAddressReg       <= 32'd0;
-        dstAddressReg        <= 32'd0;
-        doneReg              <= 1'b0;
-        errorReg             <= 1'b0;
-        rowProc              <= {ROW_BITS{1'b0}};
-        wordIdx              <= {WORD_BITS{1'b0}};
-        writeWordIdx         <= {WORD_BITS{1'b0}};
-        computeIdx           <= {WORD_BITS{1'b0}};
-        loadBurstWords       <= 6'd0;
-        writeBurstWords      <= 6'd0;
-        writeCount           <= 9'd0;
-        loadAAddrReg         <= 32'd0;
-        loadBAddrReg         <= 32'd0;
-        writeAddrReg         <= 32'd0;
-        beginTransactionOut  <= 1'b0;
-        readNotWriteOut      <= 1'b0;
-        endTransactionOut    <= 1'b0;
-        byteEnablesOut       <= 4'b0000;
-        burstSizeOut         <= 8'd0;
-        addrDataOutReg       <= 32'd0;
-        dataValidOutReg      <= 1'b0;
+        state               <= IDLE;
+        srcAAddressReg      <= 32'd0;
+        srcBAddressReg      <= 32'd0;
+        dstAddressReg       <= 32'd0;
+        doneReg             <= 1'b0;
+        errorReg            <= 1'b0;
+        rowProc             <= {ROW_BITS{1'b0}};
+        wordIdx             <= {WORD_BITS{1'b0}};
+        writeCount          <= 9'd0;
+        loadAAddrReg        <= 32'd0;
+        loadBAddrReg        <= 32'd0;
+        writeAddrReg        <= 32'd0;
+        doingWrite          <= 1'b0;
+        loadingSrcB         <= 1'b0;
+        beginTransactionOut <= 1'b0;
+        readNotWriteOut     <= 1'b0;
+        endTransactionOut   <= 1'b0;
+        byteEnablesOut      <= 4'b0000;
+        burstSizeOut        <= 8'd0;
+        addrDataOutReg      <= 32'd0;
+        dataValidOutReg     <= 1'b0;
     end else begin
-        // ── One-cycle pulse defaults ──────────────────────────────────────────
         beginTransactionOut <= 1'b0;
         readNotWriteOut     <= 1'b0;
         endTransactionOut   <= 1'b0;
@@ -184,185 +129,133 @@ always @(posedge clock) begin
         addrDataOutReg      <= 32'd0;
         dataValidOutReg     <= 1'b0;
 
-        // ── CI register writes (live-through while idle or busy) ──────────────
+        // we update the registers if we get the corrisponding correct command
         if (isMyCi && (valueA == 32'd1)) srcAAddressReg <= valueB;
         if (isMyCi && (valueA == 32'd2)) srcBAddressReg <= valueB;
         if (isMyCi && (valueA == 32'd3)) dstAddressReg  <= valueB;
         if (isMyCi && (valueA == 32'd4) && valueB[0] && !busyWire) begin
             doneReg  <= 1'b0;
             errorReg <= 1'b0;
-            state    <= S_INIT;
+            state    <= INIT;
         end
 
-        // ── FSM ───────────────────────────────────────────────────────────────
         case (state)
-            //------------------------------------------------------------------
-            S_IDLE: ; // wait for CI start command
-            //------------------------------------------------------------------
-            S_INIT: begin
+            IDLE: ;
+
+            INIT: begin
+                // in init we set up all the registers for the first row
                 loadAAddrReg <= srcAAddressReg;
                 loadBAddrReg <= srcBAddressReg;
                 writeAddrReg <= dstAddressReg;
                 rowProc      <= {ROW_BITS{1'b0}};
                 wordIdx      <= {WORD_BITS{1'b0}};
-                state        <= S_LOADA_REQ;
+                doingWrite   <= 1'b0;
+                loadingSrcB  <= 1'b0; // we start with loading srcA
+                state        <= REQ;
             end
-            //------------------------------------------------------------------
-            // Load source A row
-            //------------------------------------------------------------------
-            S_LOADA_REQ: begin
-                if (transactionGranted) state <= S_LOADA_SETUP;
+
+            // in req we just wait to get the bus grant
+            REQ: begin
+                if (transactionGranted) state <= SETUP;
             end
-            S_LOADA_SETUP: begin
+
+            SETUP: begin
                 beginTransactionOut <= 1'b1;
-                readNotWriteOut     <= 1'b1;
-                byteEnablesOut      <= 4'hF;
-                burstSizeOut        <= loadChunkWords - 8'd1;
-                loadBurstWords      <= loadChunkWords;
-                addrDataOutReg      <= loadAAddrReg;
-                state               <= S_LOADA_BURST;
+                readNotWriteOut     <= !doingWrite; // we set in the bus if we want to read or write
+                byteEnablesOut      <= 4'hF; // all byte enabled
+                burstSizeOut        <= usedBurstSize - 8'd1;
+                if (doingWrite) begin
+                    addrDataOutReg <= writeAddrReg; 
+                    writeCount     <= {1'b0, usedBurstSize} - 9'd1;
+                    state          <= WRITE_BURST;
+                end else begin
+                    addrDataOutReg <= loadingSrcB ? loadBAddrReg : loadAAddrReg; // we put the correct addr depending on if we are loading srcA or srcB
+                    state          <= LOAD_BURST;
+                end
             end
-            S_LOADA_BURST: begin
+
+            LOAD_BURST: begin
                 if (busErrorIn) begin
                     errorReg <= 1'b1;
-                    state    <= S_IDLE;
+                    state    <= BUS_ERROR_END;
                 end else begin
                     if (dataValidReg) begin
-                        lineBufA[wordIdx] <= addrDataReg;
+                        if (loadingSrcB) begin
+                            // if we are loading srcB, we XOR it with what we have in the line buffer (which is srcA) and we save the result in the line buffer
+                            lineBuf[wordIdx] <= lineBuf[wordIdx] ^ addrDataReg; 
+                            loadBAddrReg     <= loadBAddrReg + 32'd4;
+                        end else begin
+                            // if we are loading srcA we just save it in the buffer
+                            lineBuf[wordIdx] <= addrDataReg;
+                            loadAAddrReg     <= loadAAddrReg + 32'd4;
+                        end
                         wordIdx <= wordIdx + 1;
                     end
-                    if (endTxReg) begin
-                        loadAAddrReg <= loadAAddrReg + {loadBurstWords, 2'b00};
-                        // Effective wordIdx for the next-burst check: account
-                        // for the simultaneous dataValidReg pulse that arrives
-                        // with endTxReg on the last word of a burst.
+                    if (endTransactionInReg) begin
                         if ((wordIdx + {7'd0, dataValidReg}) < WORDS_PER_ROW) begin
-                            // Need another burst for the rest of the row.
-                            state <= S_LOADA_REQ;
+                            state <= REQ; // more bursts needed for this row
                         end else begin
-                            // Row fully loaded. Start loading row of srcB.
                             wordIdx <= {WORD_BITS{1'b0}};
-                            state   <= S_LOADB_REQ;
+                            if (!loadingSrcB) begin
+                                loadingSrcB <= 1'b1; //if we were doing srcA, now we do srcB
+                                state       <= REQ;
+                            end else begin
+                                loadingSrcB <= 1'b0;
+                                doingWrite  <= 1'b1; // if we were doing srcB, now we do the write part
+                                state       <= REQ;
+                            end
                         end
                     end
                 end
             end
-            //------------------------------------------------------------------
-            // Load source B row
-            //------------------------------------------------------------------
-            S_LOADB_REQ: begin
-                if (transactionGranted) state <= S_LOADB_SETUP;
-            end
-            S_LOADB_SETUP: begin
-                beginTransactionOut <= 1'b1;
-                readNotWriteOut     <= 1'b1;
-                byteEnablesOut      <= 4'hF;
-                burstSizeOut        <= loadChunkWords - 8'd1;
-                loadBurstWords      <= loadChunkWords;
-                addrDataOutReg      <= loadBAddrReg;
-                state               <= S_LOADB_BURST;
-            end
-            S_LOADB_BURST: begin
+
+            WRITE_BURST: begin
                 if (busErrorIn) begin
                     errorReg <= 1'b1;
-                    state    <= S_IDLE;
-                end else begin
-                    if (dataValidReg) begin
-                        lineBufB[wordIdx] <= addrDataReg;
-                        wordIdx <= wordIdx + 1;
-                    end
-                    if (endTxReg) begin
-                        loadBAddrReg <= loadBAddrReg + {loadBurstWords, 2'b00};
-                        if ((wordIdx + {7'd0, dataValidReg}) < WORDS_PER_ROW) begin
-                            state <= S_LOADB_REQ;
-                        end else begin
-                            // Both rows loaded → compute the XOR.
-                            wordIdx    <= {WORD_BITS{1'b0}};
-                            computeIdx <= {WORD_BITS{1'b0}};
-                            state      <= S_COMPUTE;
-                        end
-                    end
-                end
-            end
-            //------------------------------------------------------------------
-            // Compute: XOR lineBufA[i] ^ lineBufB[i] into outBuf[i], one
-            // word per clock cycle. After WORDS_PER_ROW cycles, start the
-            // write burst back to SDRAM.
-            //------------------------------------------------------------------
-            S_COMPUTE: begin
-                outBuf[computeIdx] <= xorWord;
-                if (computeIdx == (WORDS_PER_ROW - 1)) begin
-                    computeIdx   <= {WORD_BITS{1'b0}};
-                    writeWordIdx <= {WORD_BITS{1'b0}};
-                    state        <= S_WRITE_REQ;
-                end else begin
-                    computeIdx <= computeIdx + 1;
-                end
-            end
-            //------------------------------------------------------------------
-            // Write output row back to SDRAM
-            //------------------------------------------------------------------
-            S_WRITE_REQ: begin
-                if (transactionGranted) state <= S_WRITE_SETUP;
-            end
-            S_WRITE_SETUP: begin
-                beginTransactionOut <= 1'b1;
-                readNotWriteOut     <= 1'b0;
-                byteEnablesOut      <= 4'hF;
-                burstSizeOut        <= writeChunkWords - 8'd1;
-                writeBurstWords     <= writeChunkWords;
-                addrDataOutReg      <= writeAddrReg;
-                writeCount          <= {3'd0, writeChunkWords} - 9'd1;
-                state               <= S_WRITE_BURST;
-            end
-            S_WRITE_BURST: begin
-                if (busErrorIn) begin
-                    errorReg <= 1'b1;
-                    state    <= S_IDLE;
-                end else if (writeCount[8] && !busyIn) begin
-                    // Last word was accepted → release the bus.
-                    state <= S_WRITE_END;
+                    state    <= BUS_ERROR_END;
                 end else if (!writeCount[8] && !busyIn) begin
-                    // Send next word.
-                    addrDataOutReg  <= outBuf[writeWordIdx];
+                    // usual trick for the counter when it gets to 0 and then does -1 the 9th bit becomes 1 (get negative)
+                    addrDataOutReg  <= lineBuf[wordIdx]; // we just write the motion data from lineBuf
                     dataValidOutReg <= 1'b1;
-                    writeWordIdx    <= writeWordIdx + 1;
+                    wordIdx         <= wordIdx + 1;
                     writeCount      <= writeCount - 9'd1;
-                end else begin
-                    // busyIn==1: hold current data/valid.
+                    writeAddrReg    <= writeAddrReg + 32'd4;
+                end else if (busyIn) begin
                     addrDataOutReg  <= addrDataOutReg;
                     dataValidOutReg <= dataValidOutReg;
+                end else begin
+                    state <= WRITE_END;
                 end
             end
-            S_WRITE_END: begin
+
+            WRITE_END: begin // if we have more burst to do we go to req, if we ha finished to done
                 endTransactionOut <= 1'b1;
-                writeAddrReg      <= writeAddrReg + {writeBurstWords, 2'b00};
-                if (writeWordIdx < WORDS_PER_ROW) begin
-                    // Row not fully written yet → request another burst.
-                    state <= S_WRITE_REQ;
+                if (wordIdx < WORDS_PER_ROW) begin
+                    state <= REQ; // more write bursts for this row
+                end else if (rowProc < (IMG_HEIGHT - 1)) begin
+                    rowProc     <= rowProc + 1;
+                    wordIdx     <= {WORD_BITS{1'b0}};
+                    doingWrite  <= 1'b0;
+                    loadingSrcB <= 1'b0;
+                    state       <= REQ; // load next row's A
                 end else begin
-                    state <= S_ADVANCE;
+                    state <= DONE;
                 end
             end
-            //------------------------------------------------------------------
-            S_ADVANCE: begin
-                if (rowProc < (IMG_HEIGHT - 1)) begin
-                    rowProc <= rowProc + 1;
-                    wordIdx <= {WORD_BITS{1'b0}};
-                    state   <= S_LOADA_REQ;
-                end else begin
-                    state <= S_DONE;
-                end
-            end
-            //------------------------------------------------------------------
-            S_DONE: begin
+
+            DONE: begin // we just signal that we are done and go back to idle
                 doneReg <= 1'b1;
-                state   <= S_IDLE;
+                state   <= IDLE;
             end
-            //------------------------------------------------------------------
+
+            BUS_ERROR_END: begin // in case of error the master end the transaction
+                endTransactionOut <= 1'b1;
+                state             <= IDLE;
+            end
+
             default: begin
                 errorReg <= 1'b1;
-                state    <= S_IDLE;
+                state    <= IDLE;
             end
         endcase
     end
