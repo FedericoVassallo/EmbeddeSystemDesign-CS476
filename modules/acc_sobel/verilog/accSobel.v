@@ -349,7 +349,6 @@ always @(posedge clock) begin
                 end
             end
 
-            // end transaction; decide what comes next (mirrors ramDmaCi END_WRITE_TRANSACTION)
             WRITE_END: begin
                 endTransactionOut <= 1'b1;
                 if (writeWordIdx < WORDS_PER_ROW) begin
@@ -359,7 +358,7 @@ always @(posedge clock) begin
                     topIdx     <= midIdx;
                     midIdx     <= botIdx;
                     botIdx     <= topIdx;
-                    loadBufIdx <= topIdx; // NBA: uses current (old) topIdx
+                    loadBufIdx <= topIdx; 
                     rowProc    <= rowProc + 1;
                     doingWrite <= 1'b0; // switch back to load phase
                     state      <= REQ;
