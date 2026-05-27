@@ -126,20 +126,21 @@ reg [7:0] p_left, p_center;
 
 always @(*) begin
     // select the correct pixels from the rotating line buffers based on current index pointers
+    // border neighbours are forced to black so the line-buffer addresses stay in range
     case (topIdx)
-        2'd0: begin p1 = lineBuf0[compCol - 1]; p2 = lineBuf0[compCol]; p3 = lineBuf0[compCol + 1]; end
-        2'd1: begin p1 = lineBuf1[compCol - 1]; p2 = lineBuf1[compCol]; p3 = lineBuf1[compCol + 1]; end
-        default: begin p1 = lineBuf2[compCol - 1]; p2 = lineBuf2[compCol]; p3 = lineBuf2[compCol + 1]; end
+        2'd0: begin p1 = (compCol == 0) ? 8'h00 : lineBuf0[compCol - 1]; p2 = lineBuf0[compCol]; p3 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf0[compCol + 1]; end
+        2'd1: begin p1 = (compCol == 0) ? 8'h00 : lineBuf1[compCol - 1]; p2 = lineBuf1[compCol]; p3 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf1[compCol + 1]; end
+        default: begin p1 = (compCol == 0) ? 8'h00 : lineBuf2[compCol - 1]; p2 = lineBuf2[compCol]; p3 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf2[compCol + 1]; end
     endcase
     case (midIdx)
-        2'd0: begin p4 = lineBuf0[compCol - 1]; p6 = lineBuf0[compCol + 1]; end
-        2'd1: begin p4 = lineBuf1[compCol - 1]; p6 = lineBuf1[compCol + 1]; end
-        default: begin p4 = lineBuf2[compCol - 1]; p6 = lineBuf2[compCol + 1]; end
+        2'd0: begin p4 = (compCol == 0) ? 8'h00 : lineBuf0[compCol - 1]; p6 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf0[compCol + 1]; end
+        2'd1: begin p4 = (compCol == 0) ? 8'h00 : lineBuf1[compCol - 1]; p6 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf1[compCol + 1]; end
+        default: begin p4 = (compCol == 0) ? 8'h00 : lineBuf2[compCol - 1]; p6 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf2[compCol + 1]; end
     endcase
     case (botIdx)
-        2'd0: begin p7 = lineBuf0[compCol - 1]; p8 = lineBuf0[compCol]; p9 = lineBuf0[compCol + 1]; end
-        2'd1: begin p7 = lineBuf1[compCol - 1]; p8 = lineBuf1[compCol]; p9 = lineBuf1[compCol + 1]; end
-        default: begin p7 = lineBuf2[compCol - 1]; p8 = lineBuf2[compCol]; p9 = lineBuf2[compCol + 1]; end
+        2'd0: begin p7 = (compCol == 0) ? 8'h00 : lineBuf0[compCol - 1]; p8 = lineBuf0[compCol]; p9 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf0[compCol + 1]; end
+        2'd1: begin p7 = (compCol == 0) ? 8'h00 : lineBuf1[compCol - 1]; p8 = lineBuf1[compCol]; p9 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf1[compCol + 1]; end
+        default: begin p7 = (compCol == 0) ? 8'h00 : lineBuf2[compCol - 1]; p8 = lineBuf2[compCol]; p9 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf2[compCol + 1]; end
     endcase
 end
 
