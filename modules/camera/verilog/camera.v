@@ -51,8 +51,8 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
     end
   endfunction
   
-  localparam khzDivideValue = clockFrequencyInHz/1000;
-  localparam khzNrOfBits = clog2(khzDivideValue);
+  localparam khzDivideValue = clockFrequencyInHz/1000; // here we basically have the number of clock cycles in 1 ms that will be used for the counter later
+  localparam khzNrOfBits = clog2(khzDivideValue); // here we calculate how many bits we need for the khz counter (for example if clock is 2 MHz, then 2Mhz/1000 = 2000, which can be represented in 11 bits, so khzNrOfBits will be 11)
   localparam [2:0] IDLE         = 3'd0;
   localparam [2:0] REQUEST_BUS1 = 3'd1;
   localparam [2:0] INIT_BURST1  = 3'd2;
@@ -63,21 +63,22 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
   reg [2:0] s_stateMachineReg, s_stateMachineNext;
   reg s_singleShotDoneReg;
   
-  wire s_isMyCi = (ciN == customInstructionId) ? ciStart & ciCke : 1'b0;
+  wire s_isMyCi = (ciN == customInstructionId) ? ciStart & ciCke : 1'b0; 
   /*
    *
    * Here we define the counters for the 1KHz pulse and 1Hz pulse
    *
    */
   reg [khzNrOfBits-1:0] s_khzCountReg;
-  reg [9:0] s_hzCountReg;
-  wire s_khzCountZero = (s_khzCountReg == {khzNrOfBits{1'b0}}) ? 1'b1 : 1'b0;
-  wire s_hzCountZero  = (s_hzCountReg == 10'd0) ? s_khzCountZero : 1'b0;
-  wire [khzNrOfBits-1:0] s_khzCountNext = (reset == 1'b1 || s_khzCountZero == 1'b1) ? khzDivideValue - 1 : s_khzCountReg - 1;
-  wire [9:0] s_hzCountNext = (reset == 1'b1 || s_hzCountZero == 1'b1) ? 10'd999 : (s_khzCountZero == 1'b1) ? s_hzCountReg - 10'd1 : s_hzCountReg;
+  reg [9:0] s_hzCountReg; // to count 1 second we need to count 1000 ms so we exploit the fact that we already have a khz counter that counts ms, and we just need to count 1000 ms
+  wire s_khzCountZero = (s_khzCountReg == {khzNrOfBits{1'b0}}) ? 1'b1 : 1'b0; // basically when the khz counter reaches 0 we set the khzCountZero signal to 1
+  wire s_hzCountZero  = (s_hzCountReg == 10'd0) ? s_khzCountZero : 1'b0; // when the hz counter reaches 0 (but we also check that the khz counter is at zero to precisely detect the 1 second mark)
+  wire [khzNrOfBits-1:0] s_khzCountNext = (reset == 1'b1 || s_khzCountZero == 1'b1) ? khzDivideValue - 1 : s_khzCountReg - 1; // this store the value that will be loaded in the khz counter at the next cycle: if reset is high or if the counter has reached 0, we load the initial value (which is the number of clock cycles in 1 ms) otherwise we just decrement the counter
+  wire [9:0] s_hzCountNext = (reset == 1'b1 || s_hzCountZero == 1'b1) ? 10'd999 : (s_khzCountZero == 1'b1) ? s_hzCountReg - 10'd1 : s_hzCountReg; // this store the value that will be loaded in the hz counter that counts 1 , same logic as before when it has counted 1 second it gets reset
   
   always @(posedge clock)
     begin
+      // each cycle we update each of the counter with the value seen above
       s_khzCountReg <= s_khzCountNext;
       s_hzCountReg  <= s_hzCountNext;
     end
@@ -87,14 +88,14 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
    * Here we define the frame buffer parameters
    *
    */
-  reg[31:0] s_frameBufferBaseReg;
-  reg s_grabberActiveReg,s_grabberSingleShotReg;
+  reg[31:0] s_frameBufferBaseReg; // holds the base address of the frame buffer in memory, can be set through the ci interface, it where the camera will write the captured image data
+  reg s_grabberActiveReg,s_grabberSingleShotReg; // they are just flags to keep track if we are using continuous camera mode or take single shot
   
   always @(posedge clock)
     begin
-      s_frameBufferBaseReg   <= (reset == 1'b1) ? 32'd0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd5) ? {ciValueB[31:2],2'd0} : s_frameBufferBaseReg;
-      s_grabberActiveReg     <= (reset == 1'b1) ? 1'b0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd6) ? ciValueB[0]& ~ciValueB[1] : s_grabberActiveReg;
-      s_grabberSingleShotReg <= (reset == 1'b1 || s_singleShotActionReg[0] == 1'b1) ? 1'b0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd6) ? ciValueB[1]& ~ciValueB[0] : s_grabberSingleShotReg;
+      s_frameBufferBaseReg   <= (reset == 1'b1) ? 32'd0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd5) ? {ciValueB[31:2],2'd0} : s_frameBufferBaseReg; // the frame buffer base address can be set through the ci interface with command 5 (the two final 0 forced are just to make sure the address is word aligned)
+      s_grabberActiveReg     <= (reset == 1'b1) ? 1'b0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd6) ? ciValueB[0]& ~ciValueB[1] : s_grabberActiveReg; // throw command 6 we can start and stop the continuos grabbing mode, it gets activeted if if the bottom two bits of ciValueB are exactly 01 in binary
+      s_grabberSingleShotReg <= (reset == 1'b1 || s_singleShotActionReg[0] == 1'b1) ? 1'b0 : (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd6) ? ciValueB[1]& ~ciValueB[0] : s_grabberSingleShotReg; // togheter with the reset it also check for s_singleShotActionReg in the sense that if we are already in single shot mode we don't take another, to activate this mode the bottom two bits of ciValueB need to be 10 in binary
     end
   
   /*
@@ -127,6 +128,21 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
       s_fpsCountValueReg   <= (reset == 1'b1) ? 8'd0 : (s_clockFPS == 1'b1) ? s_fpsCountReg : s_fpsCountValueReg;
     end
   
+    /*
+    In this module, there are 2 completely independent clocks running at the same time:
+    clock: The main system clock (running the 1 ms and 1 sec timers)
+    pclk: The camera's pixel clock
+    since these two clocks are not synchronized, they tick at slightly different times
+    if we take the 1-millisecond alarm (s_khzCountZero) and the 1-second alarm (s_hzCountZero), these alarms are generated on the main system clock
+    the registers that need to hear those alarms are running on the camera's pclk
+    if the camera clock (pclk) tries to read the 1-second alarm at the exact microscopic fraction of a nanosecond that the alarm is flipping from 0 to 1, it might read a voltage that is halfway between 0 and 1 (metastable) 
+    to solve this problem, we use The synchroFlop
+    A synchroFlop acts as a safe "waiting room" between the two clock domains
+
+    // so we give in input the alarm signal that is generated in the main clock domain, and we get out the same signal but safely synchronized to the camera clock domain
+    */
+
+
    synchroFlop spclk ( .clockIn(clock),
                        .clockOut(pclk),
                        .reset(reset),
@@ -148,14 +164,15 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
   assign ciResult = (s_isMyCi == 1'b0) ? 32'd0 : s_selectedResult;
 
   always @*
+    // depening on the command send we give a different result in output
     case (ciValueA[3:0])
-      4'd0    : s_selectedResult <= {21'd0,s_pixelCountValueReg};
-      4'd1    : s_selectedResult <= {21'd0,s_lineCountValueReg};
-      4'd2    : s_selectedResult <= {15'd0,s_pclkCountValueReg};
-      4'd3    : s_selectedResult <= {24'd0,s_fpsCountValueReg};
-      4'd4    : s_selectedResult <= s_frameBufferBaseReg;
-      4'd7    : s_selectedResult <= {31'd0,s_singleShotDoneReg};
-      4'd8    : s_selectedResult <= s_frameCounterReg;
+      4'd0    : s_selectedResult <= {21'd0,s_pixelCountValueReg}; // the total number of pixels in a single horizontal line
+      4'd1    : s_selectedResult <= {21'd0,s_lineCountValueReg}; // the total number of horizontal lines in a single video frame
+      4'd2    : s_selectedResult <= {15'd0,s_pclkCountValueReg}; // freq of the camera pclk
+      4'd3    : s_selectedResult <= {24'd0,s_fpsCountValueReg}; // video frame rate
+      4'd4    : s_selectedResult <= s_frameBufferBaseReg; // base address of where the camera is writing
+      4'd7    : s_selectedResult <= {31'd0,s_singleShotDoneReg}; // if a single shot has been taken and is done
+      4'd8    : s_selectedResult <= s_frameCounterReg; // the absolute total number of frames captured since the system was turned on
       default : s_selectedResult <= 32'd0;
     endcase
 
@@ -168,8 +185,8 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
   reg [8:0] s_busSelectReg;
   wire [31:0] s_busPixelWord;
   wire [7:0] s_pixel1, s_pixel2,s_pixel3,s_pixel4;
-  wire [31:0] s_rgb565Grayscale = {s_pixel4,s_pixel3,s_pixel2,s_pixel1};
-  wire s_weLineBuffer = (s_pixelCountReg[2:0] == 3'b111) ? hsync : 1'b0;
+  wire [31:0] s_rgb565Grayscale = {s_pixel4,s_pixel3,s_pixel2,s_pixel1}; // we pack 4 grayscale pixels in a single 32-bit word to be written in memory
+  wire s_weLineBuffer = (s_pixelCountReg[2:0] == 3'b111) ? hsync : 1'b0; // once every 8 clock ticks (when the 32-bit word is fully packed), this wire goes high and it is used for the ram below
 
   rgb565Grayscale gray1 ( .rgb565({s_byte7Reg,s_byte6Reg}),
                           .grayscale(s_pixel1) );
@@ -179,8 +196,14 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
                           .grayscale(s_pixel3) );
   rgb565Grayscale gray4 ( .rgb565({s_byte1Reg,camData}),
                           .grayscale(s_pixel4) );
-  always @(posedge pclk)
+
+  always @(posedge pclk) // synchronous to the camera pixel clock
+    // the camera sets hsync to 1 only when it is actively transmitting a valid line of the image
+    // the full s_pixelCountReg is an 11-bit number that counts all the way up to the end of the line, by writing [2:0], the hardware is only looking at the bottom 3 bits of that counter
+    // if you count upwards using only 3 binary bits, it naturally rolls over in an endless 8-step cycle
+    // 2 byte makes 1 pixel rgb565 of the camera (that we convert with the grayscale converter above)
     begin
+      // for each if we are in the right step of the 8-step cycle and hsync is high, we load the current pixel data from the camera in the corresponding byte register
       s_byte7Reg <= (s_pixelCountReg[2:0] == 3'b000 && hsync == 1'b1) ? camData : s_byte7Reg;
       s_byte6Reg <= (s_pixelCountReg[2:0] == 3'b001 && hsync == 1'b1) ? camData : s_byte6Reg;
       s_byte5Reg <= (s_pixelCountReg[2:0] == 3'b010 && hsync == 1'b1) ? camData : s_byte5Reg;
@@ -188,15 +211,23 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
       s_byte3Reg <= (s_pixelCountReg[2:0] == 3'b100 && hsync == 1'b1) ? camData : s_byte3Reg;
       s_byte2Reg <= (s_pixelCountReg[2:0] == 3'b101 && hsync == 1'b1) ? camData : s_byte2Reg;
       s_byte1Reg <= (s_pixelCountReg[2:0] == 3'b110 && hsync == 1'b1) ? camData : s_byte1Reg;
+      // we don't have the byte0Reg because the last byte of the 32-bit word is directly feed into the grayscale converter
     end
+  
+  // this is the dual port ram 
+
+  /*
+  The camera is giving out data on its own clock (pclk), but if we want to read from the clock of system
+  if they try to talk directly, there would be problem,  the dual port RAM has two separate "doors" that operate completely independently of each other
+  */
   
   dualPortRam2k lineBuffer ( .address1({1'b0,s_pixelCountReg[10:3]}),
                              .address2(s_busSelectReg),
-                             .clock1(pclk),
-                             .clock2(clock),
-                             .writeEnable(s_weLineBuffer),
-                             .dataIn1(s_rgb565Grayscale),
-                             .dataOut2(s_busPixelWord));
+                             .clock1(pclk), // the door 1 operates at the camera pixel clock
+                             .clock2(clock), // the door 2 operates at the system clock
+                             .writeEnable(s_weLineBuffer), // once every 8 rgb565 pixels saved we write our grayscale 32 bit word (so 4 pixels)
+                             .dataIn1(s_rgb565Grayscale), 
+                             .dataOut2(s_busPixelWord)); // 
 
   /*
    *
@@ -212,8 +243,8 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
   wire s_newScreen, s_newLine;
   wire s_doWrite = ((s_stateMachineReg == DO_BURST1) && s_burstCountReg[8] == 1'b0) ? ~busyIn : 1'b0;
   wire [31:0] s_busAddressNext = (reset == 1'b1 || s_newScreen == 1'b1) ? s_frameBufferBaseReg : 
-                                 (s_doWrite == 1'b1) ? s_busAddressReg + 32'd4 : s_busAddressReg;
-  wire [7:0] s_burstSizeNext = ((s_stateMachineReg == INIT_BURST1) && s_nrOfPixelsPerLineReg > 9'd16) ? 8'd16 : s_nrOfPixelsPerLineReg[7:0];
+                                 (s_doWrite == 1'b1) ? s_busAddressReg + 32'd4 : s_busAddressReg; // calculates exactly where in RAM the next 32-bit pixel word should be saved.
+  wire [7:0] s_burstSizeNext = ((s_stateMachineReg == INIT_BURST1) && s_nrOfPixelsPerLineReg > 9'd16) ? 8'd16 : s_nrOfPixelsPerLineReg[7:0]; // set the next burst size
   
   assign requestBus        = (s_stateMachineReg == REQUEST_BUS1) ? 1'b1 : 1'b0;
   assign addressDataOut    = s_addressDataOutReg;
@@ -221,11 +252,11 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
   
   always @*
     case (s_stateMachineReg)
-      IDLE            : s_stateMachineNext <= ((s_grabberRunningReg == 1'b1 || s_singleShotActionReg[0] == 1'b1) && s_newLine == 1'b1) ? REQUEST_BUS1 : IDLE;
-      REQUEST_BUS1    : s_stateMachineNext <= (busGrant == 1'b1) ? INIT_BURST1 : REQUEST_BUS1;
-      INIT_BURST1     : s_stateMachineNext <= DO_BURST1;
+      IDLE            : s_stateMachineNext <= ((s_grabberRunningReg == 1'b1 || s_singleShotActionReg[0] == 1'b1) && s_newLine == 1'b1) ? REQUEST_BUS1 : IDLE; // we move from idle if we are in grabber mode (either continuous or single shot) and we detect the start of a new line from the camera
+      REQUEST_BUS1    : s_stateMachineNext <= (busGrant == 1'b1) ? INIT_BURST1 : REQUEST_BUS1; // we wait until the bus grant
+      INIT_BURST1     : s_stateMachineNext <= DO_BURST1; 
       DO_BURST1       : s_stateMachineNext <= (busErrorIn == 1'b1) ? END_TRANS2 :
-                                              (s_burstCountReg[8] == 1'b1 && busyIn == 1'b0) ? END_TRANS1 : DO_BURST1;
+                                              (s_burstCountReg[8] == 1'b1 && busyIn == 1'b0) ? END_TRANS1 : DO_BURST1; // if the burst is done (burst count goes negative) and the bus is not busy we can end
       END_TRANS1      : s_stateMachineNext <= (s_nrOfPixelsPerLineReg != 9'd0) ? REQUEST_BUS1 : IDLE;
       default         : s_stateMachineNext <= IDLE;
     endcase
@@ -233,11 +264,13 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
   always @(posedge clock)
     begin
       s_busAddressReg        <= s_busAddressNext;
-      s_frameCounterReg      <= (reset == 1'b1) ? 32'd0 : (s_newScreen == 1'b1) ? s_frameCounterReg + 32'd1 : s_frameCounterReg;
-      s_grabberRunningReg    <= (reset == 1'b1) ? 1'b0 : (s_newScreen == 1'b1) ? s_grabberActiveReg : s_grabberRunningReg;
-      s_singleShotActionReg  <= (reset == 1'b1 || s_singleShotActionReg[1] == 1'b1) ? 2'b0 : (s_newScreen == 1'b1) ? {1'b0,s_grabberSingleShotReg} : s_singleShotActionReg;
-      s_singleShotDoneReg    <= (reset == 1'b1 || (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd7)) ? 1'b1 : (s_singleShotActionReg[1] == 1'b1) ? 1'b1 : s_singleShotDoneReg;
-      s_stateMachineReg      <= (reset == 1'b1) ? IDLE : s_stateMachineNext;
+      s_frameCounterReg      <= (reset == 1'b1) ? 32'd0 : (s_newScreen == 1'b1) ? s_frameCounterReg + 32'd1 : s_frameCounterReg; // If a brand-new frame is starting right now (s_newScreen == 1'b1), it adds 1 to the total count of frames captured
+      s_grabberRunningReg    <= (reset == 1'b1) ? 1'b0 : (s_newScreen == 1'b1) ? s_grabberActiveReg : s_grabberRunningReg; // copies the on/off of the grabbing but only if we are at the start of a new frame to not capture half broken frame 
+      s_singleShotActionReg  <= (reset == 1'b1 || s_singleShotActionReg[1] == 1'b1) ? 2'b0 : 
+                                (s_newScreen == 1'b1) ? {s_singleShotActionReg[0],s_grabberSingleShotReg} : s_singleShotActionReg;
+      s_singleShotDoneReg    <= (reset == 1'b1 || (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd6 && ciValueB[1] == 1'b1 && ciValueB[0] == 1'b0)) ? 1'b0 : 
+                                (s_singleShotActionReg[1] == 1'b1) ? 1'b1 : s_singleShotDoneReg; // the flag the CPU reads to know if the snapshot is sitting safely in RAM 
+      s_stateMachineReg      <= (reset == 1'b1) ? IDLE : s_stateMachineNext; // if reset we go idle
       beginTransactionOut    <= (s_stateMachineReg == INIT_BURST1) ? 1'd1 : 1'd0;
       byteEnablesOut         <= (s_stateMachineReg == INIT_BURST1) ? 4'hF : 4'd0;
       s_addressDataOutReg    <= (s_stateMachineReg == INIT_BURST1) ? s_busAddressReg : 

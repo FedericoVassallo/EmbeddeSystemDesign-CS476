@@ -70,17 +70,22 @@ assign result =
 
 // linebuffer to hold one row of the image divided in 32 bit words
 reg [31:0] lineBuf [0:WORDS_PER_ROW-1];
+// output buffer: each input word (4 grayscale pixels) expands to 2 RGB565 words (4 x 16 bit)
+reg [31:0] outBuf  [0:WORDS_PER_ROW*2-1];
 
 reg doingWrite;  // in the load phase when we load the srcA or srcB we set it at 0, if we are writing to the destination we set it at 1
 reg loadingSrcB; // when we are loading srcA is 0, when we are loading srcB is 1
 
-reg [ROW_BITS-1:0]  rowProc; // we keep track of which row we are now processing
-reg [WORD_BITS-1:0] wordIdx; // to keep track of how many words we have loaded/written
+reg [ROW_BITS-1:0]  rowProc;    // we keep track of which row we are now processing
+reg [WORD_BITS-1:0] wordIdx;    // to keep track of how many words we have loaded in the current row
+reg [8:0]           outWordIdx; // write index into outBuf (goes up to WORDS_PER_ROW*2 = 320)
 reg [8:0]           writeCount; // to keep track of how many words we have written in the current burst
 reg [31:0]          loadAAddrReg, loadBAddrReg, writeAddrReg;
 
-wire [8:0] wordsRemaining = WORDS_PER_ROW - wordIdx; // the words remaining to load/write in the current row
-wire [7:0] usedBurstSize     = (wordsRemaining > MAX_BURST_WORDS) ? MAX_BURST_WORDS[7:0] : wordsRemaining[7:0];
+wire [8:0] loadWordsRemaining  = WORDS_PER_ROW   - wordIdx;    // words remaining to load in the current row
+wire [9:0] writeWordsRemaining = WORDS_PER_ROW*2 - outWordIdx; // words remaining to write in the current row
+wire [7:0] loadBurstSize  = (loadWordsRemaining  > MAX_BURST_WORDS) ? MAX_BURST_WORDS[7:0] : loadWordsRemaining[7:0];
+wire [7:0] writeBurstSize = (writeWordsRemaining > MAX_BURST_WORDS) ? MAX_BURST_WORDS[7:0] : writeWordsRemaining[7:0];
 
 reg        endTransactionInReg, dataValidReg;
 reg [31:0] addrDataReg;
@@ -107,6 +112,7 @@ always @(posedge clock) begin
         errorReg            <= 1'b0;
         rowProc             <= {ROW_BITS{1'b0}};
         wordIdx             <= {WORD_BITS{1'b0}};
+        outWordIdx          <= 9'd0;
         writeCount          <= 9'd0;
         loadAAddrReg        <= 32'd0;
         loadBAddrReg        <= 32'd0;
@@ -163,10 +169,10 @@ always @(posedge clock) begin
                 beginTransactionOut <= 1'b1;
                 readNotWriteOut     <= !doingWrite; // we set in the bus if we want to read or write
                 byteEnablesOut      <= 4'hF; // all byte enabled
-                burstSizeOut        <= usedBurstSize - 8'd1;
+                burstSizeOut        <= (doingWrite ? writeBurstSize : loadBurstSize) - 8'd1;
                 if (doingWrite) begin
-                    addrDataOutReg <= writeAddrReg; 
-                    writeCount     <= {1'b0, usedBurstSize} - 9'd1;
+                    addrDataOutReg <= writeAddrReg;
+                    writeCount     <= {1'b0, writeBurstSize} - 9'd1;
                     state          <= WRITE_BURST;
                 end else begin
                     addrDataOutReg <= loadingSrcB ? loadBAddrReg : loadAAddrReg; // we put the correct addr depending on if we are loading srcA or srcB
@@ -181,9 +187,21 @@ always @(posedge clock) begin
                 end else begin
                     if (dataValidReg) begin
                         if (loadingSrcB) begin
-                            // if we are loading srcB, we XOR it with what we have in the line buffer (which is srcA) and we save the result in the line buffer
-                            lineBuf[wordIdx] <= lineBuf[wordIdx] ^ addrDataReg; 
-                            loadBAddrReg     <= loadBAddrReg + 32'd4;
+                            // compute RGB565 overlay for all 4 pixels in the word:
+                            // new edge (curr!=0, prev==0) = red, existing edge (curr!=0) = white, no edge = black
+                            outBuf[{wordIdx, 1'b0}] <= {
+                                (lineBuf[wordIdx][15:8]  != 8'd0 && addrDataReg[15:8]  == 8'd0) ? 16'hF800 :
+                                (lineBuf[wordIdx][15:8]  != 8'd0) ? 16'hFFFF : 16'h0000,
+                                (lineBuf[wordIdx][7:0]   != 8'd0 && addrDataReg[7:0]   == 8'd0) ? 16'hF800 :
+                                (lineBuf[wordIdx][7:0]   != 8'd0) ? 16'hFFFF : 16'h0000
+                            };
+                            outBuf[{wordIdx, 1'b1}] <= {
+                                (lineBuf[wordIdx][31:24] != 8'd0 && addrDataReg[31:24] == 8'd0) ? 16'hF800 :
+                                (lineBuf[wordIdx][31:24] != 8'd0) ? 16'hFFFF : 16'h0000,
+                                (lineBuf[wordIdx][23:16] != 8'd0 && addrDataReg[23:16] == 8'd0) ? 16'hF800 :
+                                (lineBuf[wordIdx][23:16] != 8'd0) ? 16'hFFFF : 16'h0000
+                            };
+                            loadBAddrReg <= loadBAddrReg + 32'd4;
                         end else begin
                             // if we are loading srcA we just save it in the buffer
                             lineBuf[wordIdx] <= addrDataReg;
@@ -202,6 +220,7 @@ always @(posedge clock) begin
                             end else begin
                                 loadingSrcB <= 1'b0;
                                 doingWrite  <= 1'b1; // if we were doing srcB, now we do the write part
+                                outWordIdx  <= 9'd0;
                                 state       <= REQ;
                             end
                         end
@@ -215,9 +234,9 @@ always @(posedge clock) begin
                     state    <= BUS_ERROR_END;
                 end else if (!writeCount[8] && !busyIn) begin
                     // usual trick for the counter when it gets to 0 and then does -1 the 9th bit becomes 1 (get negative)
-                    addrDataOutReg  <= lineBuf[wordIdx]; // we just write the motion data from lineBuf
+                    addrDataOutReg  <= outBuf[outWordIdx]; // write the RGB565 motion data from outBuf
                     dataValidOutReg <= 1'b1;
-                    wordIdx         <= wordIdx + 1;
+                    outWordIdx      <= outWordIdx + 1;
                     writeCount      <= writeCount - 9'd1;
                     writeAddrReg    <= writeAddrReg + 32'd4;
                 end else if (busyIn) begin
@@ -230,11 +249,12 @@ always @(posedge clock) begin
 
             WRITE_END: begin // if we have more burst to do we go to req, if we ha finished to done
                 endTransactionOut <= 1'b1;
-                if (wordIdx < WORDS_PER_ROW) begin
+                if (outWordIdx < WORDS_PER_ROW*2) begin
                     state <= REQ; // more write bursts for this row
                 end else if (rowProc < (IMG_HEIGHT - 1)) begin
                     rowProc     <= rowProc + 1;
                     wordIdx     <= {WORD_BITS{1'b0}};
+                    outWordIdx  <= 9'd0;
                     doingWrite  <= 1'b0;
                     loadingSrcB <= 1'b0;
                     state       <= REQ; // load next row's A
