@@ -46,8 +46,8 @@ void edgeDetection( const uint8_t *grayscale,    // Removed volatile
                           : [out1]"=r"(edge)
                           : [in1]"r"(valueA), [in2]"r"(valueB));
 
-            // Apply the threshold to the raw hardware magnitude
-            *outPixel = (edge > threshold) ? 255 : 0;
+            // Hardware already applies threshold and returns 0 or 255
+            *outPixel = (uint8_t)edge;
             outPixel++;
 
             // Shift the window left for the next iteration (pure register moves)
