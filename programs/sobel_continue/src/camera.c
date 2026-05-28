@@ -67,6 +67,7 @@ volatile uint8_t  sobelA[FRAME_PIXELS];
 volatile uint8_t  sobelB[FRAME_PIXELS];
 volatile uint16_t motionA[FRAME_PIXELS];  // RGB565: 2 bytes per pixel
 volatile uint16_t motionB[FRAME_PIXELS];
+volatile uint16_t motionC[FRAME_PIXELS];
 
 int main () {
   volatile int result;
@@ -76,8 +77,9 @@ int main () {
   volatile uint32_t frameCounter = 0;
   volatile uint8_t *sobelCurr     = sobelA;    // this frame's edges
   volatile uint8_t *sobelPrev     = sobelB;    // last frame's edges
-  volatile uint16_t *motionDisplay = motionA;   // what HDMI is currently showing
+  volatile uint16_t *motionDisplay = motionA;   // buffer most recently queued for HDMI
   volatile uint16_t *motionDraw    = motionB;   // what the accelerator writes into
+  volatile uint16_t *motionSpare   = motionC;   // neither queued nor being written
   volatile uint8_t *captureBuffers[NR_CAPTURE_BUFFERS] = {grayscaleA, grayscaleB, grayscaleC};
 #ifdef __OR1300__
   icache_write_cfg(CACHE_SIZE_8K|CACHE_FOUR_WAY|CACHE_REPLACE_LRU);
@@ -103,7 +105,7 @@ int main () {
   for (int i = 0; i < FRAME_PIXELS; i++) {
       grayscaleA[i] = 0; grayscaleB[i] = 0; grayscaleC[i] = 0;
       sobelA[i]     = 0; sobelB[i]     = 0;
-      motionA[i]    = 0; motionB[i]    = 0;
+      motionA[i]    = 0; motionB[i]    = 0; motionC[i] = 0;
   }
 
   vga[2] = swap_u32(1); // 1 for RGB565 display mode
@@ -152,10 +154,12 @@ int main () {
     sobelPrev = sobelCurr;
     sobelCurr = temp;
 
-    // we swap the pointers for motion display and motion draw, same logic as for the sobel buffers
-    volatile uint16_t *tempM = motionDisplay;
+    // Queue the completed frame for display, but draw into the third buffer next.
+    // The old display buffer may remain active until the next HDMI newScreen.
+    volatile uint16_t *oldDisplay = motionDisplay;
     motionDisplay = motionDraw;
-    motionDraw    = tempM;
+    motionDraw    = motionSpare;
+    motionSpare   = oldDisplay;
     queue_display_buffer_swap(vga, motionDisplay);
 
     // profiling CI for stopping profiling counter and saving results
