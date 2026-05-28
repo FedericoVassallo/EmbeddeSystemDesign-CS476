@@ -53,6 +53,13 @@ static uint32_t wait_for_camera_frame(uint32_t *lastCounter)
     return delta;
 }
 
+static inline void queue_display_buffer_swap(volatile unsigned int *vga,
+                                             volatile uint16_t *buffer)
+{
+    // The graphics controller latches this pending address on the next newScreen.
+    vga[3] = swap_u32((uint32_t)buffer);
+}
+
 volatile uint8_t  grayscaleA[FRAME_PIXELS];
 volatile uint8_t  grayscaleB[FRAME_PIXELS];
 volatile uint8_t  grayscaleC[FRAME_PIXELS];
@@ -100,7 +107,7 @@ int main () {
   }
 
   vga[2] = swap_u32(1); // 1 for RGB565 display mode
-  vga[3] = swap_u32((uint32_t) motionDisplay);
+  queue_display_buffer_swap(vga, motionDisplay);
 
   uint32_t cameraCounter = camera_ci(CAMERA_CI_FRAME_COUNTER, 0);
   uint32_t writingIndex = 0;
@@ -149,7 +156,7 @@ int main () {
     volatile uint16_t *tempM = motionDisplay;
     motionDisplay = motionDraw;
     motionDraw    = tempM;
-    vga[3] = swap_u32((uint32_t) motionDisplay);
+    queue_display_buffer_swap(vga, motionDisplay);
 
     // profiling CI for stopping profiling counter and saving results
     asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
