@@ -155,11 +155,10 @@ int main () {
     sobelCurr = temp;
 
     // Queue the completed frame for display, but draw into the third buffer next.
-    // The old display buffer may remain active until the next HDMI newScreen.
+    // The old display buffer is recycled only after the camera sync point below.
     volatile uint16_t *oldDisplay = motionDisplay;
     motionDisplay = motionDraw;
     motionDraw    = motionSpare;
-    motionSpare   = oldDisplay;
     queue_display_buffer_swap(vga, motionDisplay);
 
     // profiling CI for stopping profiling counter and saving results
@@ -179,6 +178,7 @@ int main () {
         printf("camera frame skip: delta %d counter %d\n", cameraDelta, cameraCounter);
     }
 
+    motionSpare = oldDisplay;
     writingIndex = nextIndex;
   }
 }

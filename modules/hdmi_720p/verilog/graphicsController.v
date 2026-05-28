@@ -83,7 +83,7 @@ module graphicsController #( parameter [31:0] baseAddress = 32'h00000000) // max
       2'd0    : s_selectedData <= (s_dualPixelReg == 1'b0) ? {22'd0, s_graphicsWidthReg} : {s_dualPixelReg,22'd0, s_graphicsWidthReg[9:1]};
       2'd1    : s_selectedData <= (s_dualLineReg == 1'b0) ? {22'd0, s_graphicsHeightReg} : {s_dualLineReg,22'd0, s_graphicsHeightReg[9:1]};
       2'd2    : s_selectedData <= {30'd0,s_grayScaleReg,~s_grayScaleReg};
-      default : s_selectedData <= s_pendingGraphicBaseAddressReg;
+      default : s_selectedData <= s_graphicBaseAddressReg;
     endcase
   
   always @(posedge clock)
