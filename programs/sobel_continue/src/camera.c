@@ -7,20 +7,14 @@
 #include <cache.h>
 #endif
 
-// accSobel.v hardware accelerator (CI 0x0E)
-static const uint32_t SOBEL_ACC_REG_STATUS   = 0;    // read {error, busy, done}
-static const uint32_t SOBEL_ACC_REG_SRC      = 1;    // write source grayscale frame address
-static const uint32_t SOBEL_ACC_REG_DST      = 2;    // write destination edge-map address
-static const uint32_t SOBEL_ACC_REG_CONTROL  = 3;    // write bit 0 = start
-static const uint32_t SOBEL_ACC_STATUS_BUSY  = 0x2;
-
-// accMotion.v hardware accelerator (CI 0x0F)
-static const uint32_t MOTION_ACC_REG_STATUS  = 0;    // read {error, busy, done}
-static const uint32_t MOTION_ACC_REG_SRCA    = 1;    // write source A address (current Sobel frame)
-static const uint32_t MOTION_ACC_REG_SRCB    = 2;    // write source B address (previous Sobel frame)
-static const uint32_t MOTION_ACC_REG_DST     = 3;    // write destination address (motion buffer)
-static const uint32_t MOTION_ACC_REG_CONTROL = 4;    // write bit 0 = start
-static const uint32_t MOTION_ACC_STATUS_BUSY  = 0x2;
+// accSobelMotion.v fused Sobel + motion accelerator (CI 0x09)
+static const uint32_t SOBEL_MOTION_ACC_REG_STATUS    = 0; // read {error, busy, done}
+static const uint32_t SOBEL_MOTION_ACC_REG_SRC       = 1; // write source grayscale frame address
+static const uint32_t SOBEL_MOTION_ACC_REG_PREV_EDGE = 2; // write previous edge-map address
+static const uint32_t SOBEL_MOTION_ACC_REG_CURR_EDGE = 3; // write current edge-map address
+static const uint32_t SOBEL_MOTION_ACC_REG_MOTION    = 4; // write RGB565 motion buffer address
+static const uint32_t SOBEL_MOTION_ACC_REG_CONTROL   = 5; // write bit 0 = start
+static const uint32_t SOBEL_MOTION_ACC_STATUS_BUSY   = 0x2;
 
 // camera CI (CI 0x07)
 static const uint32_t CAMERA_CI_FRAME_WRITE_ADDR   = 5; // command to set the camera's address for writing the next frame into
@@ -30,18 +24,11 @@ static const uint32_t CAMERA_CI_FRAME_COUNTER = 8; // command to read the number
 #define FRAME_PIXELS           (640 * 480)
 #define NR_CAPTURE_BUFFERS     3
 
-// function to send command to the custom instruction for motion accelerator (address 0xF)
-static inline uint32_t motion_acc_ci(uint32_t a, uint32_t b) {
-    uint32_t r;
-    asm volatile("l.nios_rrr %[out],%[inA],%[inB],0xF"
-                 : [out]"=r"(r): [inA]"r"(a), [inB]"r"(b));
-    return r;
-}
-// function to send command to the custom instruction for Sobel accelerator (address 0xE)
-static inline uint32_t sobel_acc_ci(uint32_t a, uint32_t b)
+// function to send command to the fused Sobel + motion accelerator (address 0x9)
+static inline uint32_t sobel_motion_acc_ci(uint32_t a, uint32_t b)
 {
     uint32_t r;
-    asm volatile("l.nios_rrr %[out],%[inA],%[inB],0xE"
+    asm volatile("l.nios_rrr %[out],%[inA],%[inB],0x9"
                  : [out]"=r"(r): [inA]"r"(a), [inB]"r"(b));
     return r;
 }
@@ -139,28 +126,19 @@ int main () {
 
     asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(7)); // start profiling
 
-    // we start the Sobel accelerator on the completed camera frame
-    sobel_acc_ci(SOBEL_ACC_REG_SRC, (uint32_t)completedFrame);
-    sobel_acc_ci(SOBEL_ACC_REG_DST, (uint32_t)sobelCurr); // we set the write address of the result sobel frame to sobelCurr
-    sobel_acc_ci(SOBEL_ACC_REG_CONTROL, 1); // we set the signal to start by putting 1 in valueB[0]
+    // The fused accelerator computes this frame's Sobel edges, compares them
+    // with the previous edge map, writes the new edge map, and draws RGB565 motion.
+    sobel_motion_acc_ci(SOBEL_MOTION_ACC_REG_SRC,       (uint32_t)completedFrame);
+    sobel_motion_acc_ci(SOBEL_MOTION_ACC_REG_PREV_EDGE, (uint32_t)sobelPrev);
+    sobel_motion_acc_ci(SOBEL_MOTION_ACC_REG_CURR_EDGE, (uint32_t)sobelCurr);
+    sobel_motion_acc_ci(SOBEL_MOTION_ACC_REG_MOTION,    (uint32_t)motionDraw);
+    sobel_motion_acc_ci(SOBEL_MOTION_ACC_REG_CONTROL,   1);
     volatile uint32_t acc_status;
     volatile uint32_t acc_timeout = 10000000;
     do {
-        acc_status = sobel_acc_ci(SOBEL_ACC_REG_STATUS, 0);
+        acc_status = sobel_motion_acc_ci(SOBEL_MOTION_ACC_REG_STATUS, 0);
         acc_timeout--;
-    } while ((acc_status & SOBEL_ACC_STATUS_BUSY) && acc_timeout != 0);
-
-    // we start the motion accelerator to compare this frame's edges with the previous frame's edges and write the result into motionDraw
-    motion_acc_ci(MOTION_ACC_REG_SRCA, (uint32_t)sobelCurr); // set source A to this frame's Sobel edges
-    motion_acc_ci(MOTION_ACC_REG_SRCB, (uint32_t)sobelPrev); // set source B to previous frame's Sobel edges
-    motion_acc_ci(MOTION_ACC_REG_DST,  (uint32_t)motionDraw); // write the result into the buffer motionDraw
-    motion_acc_ci(MOTION_ACC_REG_CONTROL, 1); // we set the signal to start by putting 1 in valueB[0]
-    volatile uint32_t mot_status;
-    volatile uint32_t mot_timeout = 10000000;
-    do {
-        mot_status = motion_acc_ci(MOTION_ACC_REG_STATUS, 0);
-        mot_timeout--;
-    } while ((mot_status & MOTION_ACC_STATUS_BUSY) && mot_timeout != 0);
+    } while ((acc_status & SOBEL_MOTION_ACC_STATUS_BUSY) && acc_timeout != 0);
 
     // we swap the pointer to the sobel buffers, so that the current sobel frame becomes the previous sobel, and the next accelerator result will be written into the other buffer 
     volatile uint8_t *temp = sobelPrev;
@@ -178,9 +156,9 @@ int main () {
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
     if ((frameCounter % FRAME_PROFILE_INTERVAL) == 0) {
-        printf("frame %d cam %d src %d write %d next %d sobel %d/%d motion %d/%d cycles %d stall %d idle %d\n",
+        printf("frame %d cam %d src %d write %d next %d fused %d/%d cycles %d stall %d idle %d\n",
                frameCounter, cameraCounter, completedIndex, writingIndex, nextIndex,
-               acc_status, acc_timeout, mot_status, mot_timeout, cycles, stall, idle);
+               acc_status, acc_timeout, cycles, stall, idle);
     }
     frameCounter++;
 
