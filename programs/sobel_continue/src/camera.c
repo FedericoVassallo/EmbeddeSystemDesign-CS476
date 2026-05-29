@@ -148,6 +148,7 @@ int main () {
         acc_status = sobel_acc_ci(SOBEL_ACC_REG_STATUS, 0);
     } while ((acc_status & SOBEL_ACC_STATUS_BUSY) != 0);
 
+    
     // we start the motion accelerator to compare this frame's edges with the previous frame's edges and write the result into motionDraw
     motion_acc_ci(MOTION_ACC_REG_SRCA, (uint32_t)sobelCurr); // set source A to this frame's Sobel edges
     motion_acc_ci(MOTION_ACC_REG_SRCB, (uint32_t)sobelPrev); // set source B to previous frame's Sobel edges
@@ -173,7 +174,7 @@ int main () {
     asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
-    printf("nrOfCycles for Sobel: %d %d %d\n", cycles, stall, idle);
+    printf("nrOfCycles for Sobel+Motion: %d %d %d\n", cycles, stall, idle);
     frameCounter++;
 
     uint32_t cameraDelta = wait_for_camera_frame(&cameraCounter);
