@@ -98,6 +98,10 @@ int main () {
   while (1) {
     // Start capturing the next frame into captureNext immediately
     // This runs in parallel with the Sobel+Motion processing below.
+    // Bus contention with the accelerators is tolerated because both
+    // accSobel and accMotion now use 16-word bursts (MAX_BURST_WORDS=16),
+    // matching the camera grabber, so neither one starves the camera
+    // long enough to corrupt a line transfer.
     takeSingleImageNonBlocking((uint32_t) captureNext);
 
     // Point HDMI at the last completed motion result while we compute the new one.
@@ -109,12 +113,10 @@ int main () {
     sobel_acc_ci(SOBEL_ACC_REG_SRC, (uint32_t)captureReady);
     sobel_acc_ci(SOBEL_ACC_REG_DST, (uint32_t)sobelCurr);
     sobel_acc_ci(SOBEL_ACC_REG_CONTROL, 1u);
-    volatile uint32_t acc_status;
-    volatile uint32_t acc_timeout = 10000000u;
+    uint32_t acc_status;
     do {
         acc_status = sobel_acc_ci(SOBEL_ACC_REG_STATUS, 0);
-        acc_timeout--;
-    } while ((acc_status & SOBEL_ACC_STATUS_BUSY) && acc_timeout != 0);
+    } while ((acc_status & SOBEL_ACC_STATUS_BUSY) != 0);
 
     asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
@@ -128,12 +130,10 @@ int main () {
     motion_acc_ci(MOTION_ACC_REG_SRCB, (uint32_t)sobelPrev);
     motion_acc_ci(MOTION_ACC_REG_DST,  (uint32_t)motionDraw);
     motion_acc_ci(MOTION_ACC_REG_CONTROL, 1u);
-    volatile uint32_t mot_status;
-    volatile uint32_t mot_timeout = 10000000u;
+    uint32_t mot_status;
     do {
         mot_status = motion_acc_ci(MOTION_ACC_REG_STATUS, 0);
-        mot_timeout--;
-    } while ((mot_status & MOTION_ACC_STATUS_BUSY) && mot_timeout != 0);
+    } while ((mot_status & MOTION_ACC_STATUS_BUSY) != 0);
 
     // we swap sobel pointers and this frame's edges become "previous" for next frame
     volatile uint8_t *temp = sobelPrev;
