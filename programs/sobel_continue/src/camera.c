@@ -143,24 +143,20 @@ int main () {
     sobel_acc_ci(SOBEL_ACC_REG_SRC, (uint32_t)completedFrame);
     sobel_acc_ci(SOBEL_ACC_REG_DST, (uint32_t)sobelCurr); // we set the write address of the result sobel frame to sobelCurr
     sobel_acc_ci(SOBEL_ACC_REG_CONTROL, 1); // we set the signal to start by putting 1 in valueB[0]
-    volatile uint32_t acc_status;
-    volatile uint32_t acc_timeout = 10000000;
+    uint32_t acc_status;
     do {
         acc_status = sobel_acc_ci(SOBEL_ACC_REG_STATUS, 0);
-        acc_timeout--;
-    } while ((acc_status & SOBEL_ACC_STATUS_BUSY) && acc_timeout != 0);
+    } while ((acc_status & SOBEL_ACC_STATUS_BUSY) != 0);
 
     // we start the motion accelerator to compare this frame's edges with the previous frame's edges and write the result into motionDraw
     motion_acc_ci(MOTION_ACC_REG_SRCA, (uint32_t)sobelCurr); // set source A to this frame's Sobel edges
     motion_acc_ci(MOTION_ACC_REG_SRCB, (uint32_t)sobelPrev); // set source B to previous frame's Sobel edges
     motion_acc_ci(MOTION_ACC_REG_DST,  (uint32_t)motionDraw); // write the result into the buffer motionDraw
     motion_acc_ci(MOTION_ACC_REG_CONTROL, 1); // we set the signal to start by putting 1 in valueB[0]
-    volatile uint32_t mot_status;
-    volatile uint32_t mot_timeout = 10000000;
+    uint32_t mot_status;
     do {
         mot_status = motion_acc_ci(MOTION_ACC_REG_STATUS, 0);
-        mot_timeout--;
-    } while ((mot_status & MOTION_ACC_STATUS_BUSY) && mot_timeout != 0);
+    } while ((mot_status & MOTION_ACC_STATUS_BUSY) != 0);
 
     // we swap the pointer to the sobel buffers, so that the current sobel frame becomes the previous sobel, and the next accelerator result will be written into the other buffer 
     volatile uint8_t *temp = sobelPrev;
@@ -177,11 +173,7 @@ int main () {
     asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
-    if ((frameCounter % FRAME_PROFILE_INTERVAL) == 0) {
-        printf("frame %d cam %d src %d write %d next %d sobel %d/%d motion %d/%d cycles %d stall %d idle %d\n",
-               frameCounter, cameraCounter, completedIndex, writingIndex, nextIndex,
-               acc_status, acc_timeout, mot_status, mot_timeout, cycles, stall, idle);
-    }
+    printf("nrOfCycles for Sobel: %d %d %d\n", cycles, stall, idle);
     frameCounter++;
 
     uint32_t cameraDelta = wait_for_camera_frame(&cameraCounter);
