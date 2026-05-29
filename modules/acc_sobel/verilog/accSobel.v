@@ -44,7 +44,7 @@ module accSobel #(
 );
 
 localparam integer WORDS_PER_ROW   = IMG_WIDTH / 4; // each 32-bit word holds 4 pixels
-localparam integer MAX_BURST_WORDS = 32;
+localparam integer MAX_BURST_WORDS = 16;
 
 // bit widths for index registers
 localparam integer COL_BITS  = 10; // up to 1024 columns
