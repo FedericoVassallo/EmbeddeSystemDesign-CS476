@@ -15,6 +15,14 @@
 #define FUSION_ACC_REG_MOTION    4u   // write: destination motion buffer
 #define FUSION_ACC_REG_CONTROL   5u   // write: bit 0 = start
 #define FUSION_ACC_STATUS_BUSY   0x2u
+#define FRAME_PROFILE_INTERVAL   15u
+
+#define PROFILE_COUNTER_CYCLES   0u
+#define PROFILE_COUNTER_STALL    1u
+#define PROFILE_COUNTER_IDLE     2u
+#define PROFILE_ENABLE_0_2       0x007u
+#define PROFILE_DISABLE_0_2      0x070u
+#define PROFILE_RESET_0_2        0x700u
 
 static inline uint32_t fusion_acc_ci(uint32_t a, uint32_t b)
 {
@@ -23,6 +31,38 @@ static inline uint32_t fusion_acc_ci(uint32_t a, uint32_t b)
                  : [out]"=r"(r)
                  : [inA]"r"(a), [inB]"r"(b));
     return r;
+}
+
+static inline uint32_t profile_ci(uint32_t counter, uint32_t control)
+{
+    uint32_t r;
+    asm volatile("l.nios_rrr %[out],%[inA],%[inB],0xB"
+                 : [out]"=r"(r)
+                 : [inA]"r"(counter), [inB]"r"(control));
+    return r;
+}
+
+static inline void profile_start_0_2(void)
+{
+    (void)profile_ci(0, PROFILE_RESET_0_2 | PROFILE_ENABLE_0_2);
+}
+
+static inline void profile_snapshot_0_2(volatile uint32_t *cycles,
+                                        volatile uint32_t *stall,
+                                        volatile uint32_t *idle)
+{
+    *cycles = profile_ci(PROFILE_COUNTER_CYCLES, 0);
+    *stall  = profile_ci(PROFILE_COUNTER_STALL,  0);
+    *idle   = profile_ci(PROFILE_COUNTER_IDLE,   0);
+}
+
+static inline void profile_stop_read_reset_0_2(volatile uint32_t *cycles,
+                                               volatile uint32_t *stall,
+                                               volatile uint32_t *idle)
+{
+    *cycles = profile_ci(PROFILE_COUNTER_CYCLES, PROFILE_DISABLE_0_2 | (1u << 8));
+    *stall  = profile_ci(PROFILE_COUNTER_STALL,  (1u << 9));
+    *idle   = profile_ci(PROFILE_COUNTER_IDLE,   (1u << 10));
 }
 
 volatile uint8_t  grayscaleA[640*480]; // capture buffer A
@@ -40,7 +80,9 @@ int main () {
   volatile int result;
   volatile unsigned int *vga = (unsigned int *) 0X50000020;
   camParameters camParams;
-  volatile uint32_t cycles, stall, idle;
+  volatile uint32_t fusionCycles, fusionStall, fusionIdle;
+  volatile uint32_t totalCycles, totalStall, totalIdle;
+  volatile uint32_t frameCounter = 0;
   volatile uint8_t  *captureReady  = grayscaleA; // frame ready to be processed
   volatile uint8_t  *captureNext   = grayscaleB; // where the camera writes next
   volatile uint8_t  *sobelCurr     = sobelA;     // this frame's edges
@@ -89,7 +131,7 @@ int main () {
     // Point HDMI at the last completed motion result while we compute the new one.
     vga[3] = swap_u32((uint32_t) motionDisplay);
 
-    asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(7)); // start profiling
+    profile_start_0_2();
 
     // The fused accelerator computes Sobel, stores this frame's edge map,
     // compares it with the previous edge map, and writes the RGB565 motion frame.
@@ -105,11 +147,14 @@ int main () {
         acc_timeout--;
     } while ((acc_status & FUSION_ACC_STATUS_BUSY) && acc_timeout != 0);
 
-    asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
-    printf("nrOfCycles for Fusion: %d %d %d status %d timeout %d\n",
-           cycles, stall, idle, acc_status, acc_timeout);
+    // Snapshot only. Do not stop/reset here, because the same counters keep
+    // running until waitForNextImage() completes for total latency.
+    profile_snapshot_0_2(&fusionCycles, &fusionStall, &fusionIdle);
+    if ((frameCounter % FRAME_PROFILE_INTERVAL) == 0) {
+        printf("SOBEL + MOTION: frame %d cycles %d stall %d idle %d\n",
+                frameCounter, fusionCycles, fusionStall, fusionIdle);
+    }
+    
 
     // we swap sobel pointers and this frame's edges become "previous" for next frame
     volatile uint8_t *temp = sobelPrev;
@@ -125,6 +170,13 @@ int main () {
 
     // Wait for captureNext to be fully written before we process it
     waitForNextImage();
+
+    profile_stop_read_reset_0_2(&totalCycles, &totalStall, &totalIdle);
+    if ((frameCounter % FRAME_PROFILE_INTERVAL) == 0) {
+        printf("TOTAL: frame %d cycles %d stall %d idle %d\n",
+                frameCounter, totalCycles, totalStall, totalIdle);
+    }
+    frameCounter++;
 
     // we swap capture buffers so captureNext is now ready, captureReady is free
     volatile uint8_t *tempC = captureReady;
