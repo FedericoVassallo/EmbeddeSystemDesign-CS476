@@ -140,8 +140,8 @@ int main () {
     fusion_acc_ci(FUSION_ACC_REG_CURR_EDGE, (uint32_t)sobelCurr);
     fusion_acc_ci(FUSION_ACC_REG_MOTION,    (uint32_t)motionDraw);
     fusion_acc_ci(FUSION_ACC_REG_CONTROL,   1u);
-    volatile uint32_t acc_status;
-    volatile uint32_t acc_timeout = 10000000u;
+    uint32_t acc_status;
+    uint32_t acc_timeout = 10000000u;
     do {
         acc_status = fusion_acc_ci(FUSION_ACC_REG_STATUS, 0);
         acc_timeout--;

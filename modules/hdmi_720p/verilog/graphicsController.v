@@ -53,7 +53,7 @@ module graphicsController #( parameter [31:0] baseAddress = 32'h00000000) // max
    * Here we define the bus slave part
    *
    */
-  reg [31:0] s_busAddressReg, s_graphicBaseAddressReg, s_pendingGraphicBaseAddressReg, s_currentPixelAddressReg;
+  reg [31:0] s_busAddressReg, s_graphicBaseAddressReg, s_currentPixelAddressReg;
   reg [31:0] s_busDataInReg, s_busDataOutReg;
   reg [31:0] s_selectedData;
   reg [3:0]  s_dmaState, s_dmaStateNext;
@@ -96,11 +96,8 @@ module graphicsController #( parameter [31:0] baseAddress = 32'h00000000) // max
       s_busDataInReg          <= (dataValidIn == 1'b1) ? addressDataIn : s_busDataInReg;
       s_busDataInValidReg     <= dataValidIn;
       s_writeRegisterReg      <= dataValidIn & s_isMyTransaction & ~s_readNotWriteReg;
-      s_pendingGraphicBaseAddressReg <= (reset == 1'b1) ? 32'd1 :
-                                        (s_writeRegisterReg == 1'b1 && s_busAddressReg[3:2] == 2'b11) ? s_busDataInReg : s_pendingGraphicBaseAddressReg;
-      s_graphicBaseAddressReg <= (reset == 1'b1) ? 32'd1 :
-                                 (newScreen == 1'b1 && s_writeRegisterReg == 1'b1 && s_busAddressReg[3:2] == 2'b11) ? s_busDataInReg :
-                                 (newScreen == 1'b1) ? s_pendingGraphicBaseAddressReg : s_graphicBaseAddressReg;
+      s_graphicBaseAddressReg <= (reset == 1'b1) ? 32'd1 : 
+                                 (s_writeRegisterReg == 1'b1 && s_busAddressReg[3:2] == 2'b11) ? s_busDataInReg : s_graphicBaseAddressReg;
       s_graphicsWidthReg      <= (reset == 1'b1) ? 10'd512 :
                                  (s_writeRegisterReg == 1'b1 && s_busAddressReg[3:2] == 2'b00) ? s_graphicsWidth : s_graphicsWidthReg;
       s_dualPixelReg          <= (reset == 1'b1) ? 1'b0 : 
@@ -177,8 +174,7 @@ module graphicsController #( parameter [31:0] baseAddress = 32'h00000000) // max
                                   ((s_writeAddressReg[9] == 1'd0 && s_dmaState == WRITE_BLACK) ||
                                    ((s_dmaState == READ || s_dmaState == READ1) && s_busDataInValidReg == 1'd1)) ? s_writeAddressReg + 10'd1 : s_writeAddressReg;
       s_currentPixelAddressReg <= (reset == 1'b1) ? 32'd0 :
-                                  (newScreen == 1'b1 && s_writeRegisterReg == 1'b1 && s_busAddressReg[3:2] == 2'b11) ? s_busDataInReg :
-                                  (newScreen == 1'b1) ? s_pendingGraphicBaseAddressReg :
+                                  (newScreen == 1'b1) ? s_graphicBaseAddressReg :
                                   (s_busDataInValidReg == 1'b1 && (s_dmaState == READ || s_dmaState == READ1)) ? s_currentPixelAddressReg + 32'd4 : s_currentPixelAddressReg;
     end
 endmodule

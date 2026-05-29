@@ -22,7 +22,6 @@ static const uint32_t CAMERA_CI_FRAME_COUNTER = 8; // command to read the number
 
 #define FRAME_PROFILE_INTERVAL 15
 #define FRAME_PIXELS           (640 * 480)
-#define NR_CAPTURE_BUFFERS     3
 
 // function to send command to the fused Sobel + motion accelerator (address 0x9)
 static inline uint32_t sobel_motion_acc_ci(uint32_t a, uint32_t b)
@@ -53,13 +52,6 @@ static uint32_t wait_for_camera_frame(uint32_t *lastCounter)
     return delta;
 }
 
-static inline void queue_display_buffer_swap(volatile unsigned int *vga,
-                                             volatile uint16_t *buffer)
-{
-    // The graphics controller latches this pending address on the next newScreen.
-    vga[3] = swap_u32((uint32_t)buffer);
-}
-
 volatile uint8_t  grayscaleA[FRAME_PIXELS];
 volatile uint8_t  grayscaleB[FRAME_PIXELS];
 volatile uint8_t  grayscaleC[FRAME_PIXELS];
@@ -67,7 +59,6 @@ volatile uint8_t  sobelA[FRAME_PIXELS];
 volatile uint8_t  sobelB[FRAME_PIXELS];
 volatile uint16_t motionA[FRAME_PIXELS];  // RGB565: 2 bytes per pixel
 volatile uint16_t motionB[FRAME_PIXELS];
-volatile uint16_t motionC[FRAME_PIXELS];
 
 int main () {
   volatile int result;
@@ -75,12 +66,13 @@ int main () {
   camParameters camParams;
   volatile uint32_t cycles, stall, idle;
   volatile uint32_t frameCounter = 0;
+  volatile uint8_t *captureReady   = grayscaleA; // completed frame ready to be processed
+  volatile uint8_t *captureWriting = grayscaleB; // buffer being filled by the camera
+  volatile uint8_t *captureFree    = grayscaleC; // armed for the next camera frame
   volatile uint8_t *sobelCurr     = sobelA;    // this frame's edges
   volatile uint8_t *sobelPrev     = sobelB;    // last frame's edges
-  volatile uint16_t *motionDisplay = motionA;   // buffer most recently queued for HDMI
+  volatile uint16_t *motionDisplay = motionA;   // what HDMI is currently showing
   volatile uint16_t *motionDraw    = motionB;   // what the accelerator writes into
-  volatile uint16_t *motionSpare   = motionC;   // neither queued nor being written
-  volatile uint8_t *captureBuffers[NR_CAPTURE_BUFFERS] = {grayscaleA, grayscaleB, grayscaleC};
 #ifdef __OR1300__
   icache_write_cfg(CACHE_SIZE_8K|CACHE_FOUR_WAY|CACHE_REPLACE_LRU);
   dcache_write_cfg(CACHE_SIZE_8K|CACHE_FOUR_WAY|CACHE_WRITE_BACK|CACHE_REPLACE_PLRU);
@@ -105,45 +97,38 @@ int main () {
   for (int i = 0; i < FRAME_PIXELS; i++) {
       grayscaleA[i] = 0; grayscaleB[i] = 0; grayscaleC[i] = 0;
       sobelA[i]     = 0; sobelB[i]     = 0;
-      motionA[i]    = 0; motionB[i]    = 0; motionC[i] = 0;
+      motionA[i]    = 0; motionB[i]    = 0;
   }
 
   vga[2] = swap_u32(1); // 1 for RGB565 display mode
-  queue_display_buffer_swap(vga, motionDisplay);
+  vga[3] = swap_u32((uint32_t)motionDisplay);
 
   uint32_t cameraCounter = camera_ci(CAMERA_CI_FRAME_COUNTER, 0);
-  uint32_t writingIndex = 0;
 
-  ///////
-  // TO CHECK MAYBE WE CAN SUBSTITUTE WITH TAKEIMAGE BLOCKING FOR THE FIRST 2 FRAMES, THEN START CONTINUOUS MODE
-  ////////
-
-  enableContinues((uint32_t)captureBuffers[writingIndex]); // tell camera to start writing into the first capture buffer
-  wait_for_camera_frame(&cameraCounter); // we wait for the first frame to be captured
-  camera_ci(CAMERA_CI_FRAME_WRITE_ADDR, (uint32_t)captureBuffers[1]); // we set the camera to set the seoond capture frame
-  wait_for_camera_frame(&cameraCounter); // we wait for the second frame to be captured
-  writingIndex = 1;
+  // The camera frame counter changes at the start of a new frame. Therefore
+  // the buffer from the previous camera interval is complete only after the
+  // next counter change. Keep one buffer ready, one writing, and one already
+  // armed for the next camera boundary.
+  enableContinues((uint32_t)captureReady);
+  wait_for_camera_frame(&cameraCounter);
+  camera_ci(CAMERA_CI_FRAME_WRITE_ADDR, (uint32_t)captureWriting);
+  wait_for_camera_frame(&cameraCounter);
+  camera_ci(CAMERA_CI_FRAME_WRITE_ADDR, (uint32_t)captureFree);
 
   printf("Continuous capture enabled, camera frame counter %d\n", cameraCounter);
 
   while (1) {
-    uint32_t completedIndex = (writingIndex + 2) % NR_CAPTURE_BUFFERS;
-    uint32_t nextIndex = (writingIndex + 1) % NR_CAPTURE_BUFFERS;
-    volatile uint8_t *completedFrame = captureBuffers[completedIndex];
-
-    camera_ci(CAMERA_CI_FRAME_WRITE_ADDR, (uint32_t)captureBuffers[nextIndex]);
-
     asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(7)); // start profiling
 
     // The fused accelerator computes this frame's Sobel edges, compares them
     // with the previous edge map, writes the new edge map, and draws RGB565 motion.
-    sobel_motion_acc_ci(SOBEL_MOTION_ACC_REG_SRC,       (uint32_t)completedFrame);
+    sobel_motion_acc_ci(SOBEL_MOTION_ACC_REG_SRC,       (uint32_t)captureReady);
     sobel_motion_acc_ci(SOBEL_MOTION_ACC_REG_PREV_EDGE, (uint32_t)sobelPrev);
     sobel_motion_acc_ci(SOBEL_MOTION_ACC_REG_CURR_EDGE, (uint32_t)sobelCurr);
     sobel_motion_acc_ci(SOBEL_MOTION_ACC_REG_MOTION,    (uint32_t)motionDraw);
     sobel_motion_acc_ci(SOBEL_MOTION_ACC_REG_CONTROL,   1);
-    volatile uint32_t acc_status;
-    volatile uint32_t acc_timeout = 10000000;
+    uint32_t acc_status;
+    uint32_t acc_timeout = 10000000;
     do {
         acc_status = sobel_motion_acc_ci(SOBEL_MOTION_ACC_REG_STATUS, 0);
         acc_timeout--;
@@ -154,20 +139,20 @@ int main () {
     sobelPrev = sobelCurr;
     sobelCurr = temp;
 
-    // Queue the completed frame for display, but draw into the third buffer next.
-    // The old display buffer is recycled only after the camera sync point below.
-    volatile uint16_t *oldDisplay = motionDisplay;
+    // The buffer we just wrote becomes visible; HDMI's old display buffer is
+    // then free for the next accelerator output.
+    volatile uint16_t *tempM = motionDisplay;
     motionDisplay = motionDraw;
-    motionDraw    = motionSpare;
-    queue_display_buffer_swap(vga, motionDisplay);
+    motionDraw    = tempM;
+    vga[3] = swap_u32((uint32_t)motionDisplay);
 
     // profiling CI for stopping profiling counter and saving results
     asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
     if ((frameCounter % FRAME_PROFILE_INTERVAL) == 0) {
-        printf("frame %d cam %d src %d write %d next %d fused %d/%d cycles %d stall %d idle %d\n",
-               frameCounter, cameraCounter, completedIndex, writingIndex, nextIndex,
+        printf("frame %d cam %d fused %d/%d cycles %d stall %d idle %d\n",
+               frameCounter, cameraCounter,
                acc_status, acc_timeout, cycles, stall, idle);
     }
     frameCounter++;
@@ -178,7 +163,17 @@ int main () {
         printf("camera frame skip: delta %d counter %d\n", cameraDelta, cameraCounter);
     }
 
-    motionSpare = oldDisplay;
-    writingIndex = nextIndex;
+    // At this point the camera has started writing captureFree. The buffer
+    // it was writing before this boundary is complete and safe to process.
+    volatile uint8_t *completedFrame = captureWriting;
+    volatile uint8_t *processedFrame = captureReady;
+    captureWriting = captureFree;
+    captureReady   = completedFrame;
+    captureFree    = processedFrame;
+
+    // Arm the buffer we just finished processing for the frame after the one
+    // currently being captured. This must happen immediately after the camera
+    // boundary so the next newScreen does not reuse the current write buffer.
+    camera_ci(CAMERA_CI_FRAME_WRITE_ADDR, (uint32_t)captureFree);
   }
 }
