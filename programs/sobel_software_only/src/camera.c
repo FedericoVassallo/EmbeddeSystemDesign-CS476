@@ -20,7 +20,7 @@ volatile uint8_t  grayscaleA[640*480]; // capture buffer A
 volatile uint8_t  grayscaleB[640*480]; // capture buffer B (pipeline: next frame)
 volatile uint8_t  sobelA[640*480];     // edge map, buffer A
 volatile uint8_t  sobelB[640*480];     // edge map, buffer B
-// Double buffers for RGB565 motion output
+// double buffers for motion output HDMI displays one buffer while the accelerator writes the other, then we ping-pong
 volatile uint16_t motionA[640*480];
 volatile uint16_t motionB[640*480];
 
@@ -56,6 +56,7 @@ int main () {
   printf("PCLK (kHz) : %d\n", camParams.pixelClockInkHz);
   printf("FPS        : %d\n", camParams.framesPerSecond);
 
+  // clear all buffers
   for (int i = 0; i < 640*480; i++) {
       grayscaleA[i] = 0; grayscaleB[i] = 0;
       sobelA[i]     = 0; sobelB[i]     = 0;
