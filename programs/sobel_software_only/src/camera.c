@@ -8,12 +8,19 @@
 #include <cache.h>
 #endif
 
+// profileCi counter command
+static const uint32_t PROF_START            = 7;          // start cycle/stall/idle counters
+static const uint32_t PROF_STOP_READ_CYCLES = 1<<8|7<<4;  // freeze all counters and reset cycle counter
+static const uint32_t PROF_SEL_STALL        = 1;          // valueA: select stall counter
+static const uint32_t PROF_STALL_RESET      = 1<<9;       // reset stall counter
+static const uint32_t PROF_SEL_IDLE         = 2;          // valueA: select bus-idle counter
+static const uint32_t PROF_IDLE_RESET       = 1<<10;      // reset bus-idle counter
+
 volatile uint8_t  grayscaleA[640*480]; // capture buffer A
 volatile uint8_t  grayscaleB[640*480]; // capture buffer B (pipeline: next frame)
 volatile uint8_t  sobelA[640*480];     // edge map, buffer A
 volatile uint8_t  sobelB[640*480];     // edge map, buffer B
-// Double-buffered RGB565 motion output: same color coding as accMotion.v
-// (red = new/moving edge, white = stable edge, black = no edge).
+// Double buffers for RGB565 motion output
 volatile uint16_t motionA[640*480];
 volatile uint16_t motionB[640*480];
 
@@ -60,63 +67,59 @@ int main () {
 
   int totalPixels = camParams.nrOfPixelsPerLine * camParams.nrOfLinesPerImage;
 
-  // Bootstrap: block until the very first frame is captured.
+  // block until the very first frame is captured
   takeSingleImageBlocking((uint32_t) captureReady);
 
   while (1) {
-    // Start capturing the next frame into captureNext immediately.
-    // This runs in parallel with the Sobel+motion processing below.
+    // start capturing the next frame into captureNext immediately
     takeSingleImageNonBlocking((uint32_t) captureNext);
 
-    // Point HDMI at the last completed motion result while we compute the new one.
+    // point HDMI at the last completed motion result while we compute the new one
     vga[3] = swap_u32((uint32_t) motionDisplay);
 
-    asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(7)); // start profiling
+    asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(PROF_START)); // start profiling
 
-    // ── Software Sobel edge detection ────────────────────────────────────────
+    // software Sobel edge detection call
     edgeDetection(captureReady, sobelCurr, camParams.nrOfPixelsPerLine, camParams.nrOfLinesPerImage, 128);
 
-    asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
+    // stop profiling and print results for Sobel
+    asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(PROF_STOP_READ_CYCLES));
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(PROF_SEL_STALL),[in2]"r"(PROF_STALL_RESET));
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(PROF_SEL_IDLE),[in2]"r"(PROF_IDLE_RESET));
     printf("nrOfCycles for Sobel: %d %d %d\n", cycles, stall, idle);
 
-    // ── Software motion detection → RGB565 output ────────────────────────────
-    // Same color coding as accMotion.v:
-    //   current edge, previous no edge → red   (0xF800) new/moving edge
-    //   current edge, previous edge    → white (0xFFFF) stable edge
-    //   no current edge                → black (0x0000)
+    asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(PROF_START)); // start profiling
 
-    asm volatile ("l.nios_rrr r0,r0,%[in2],0xB"::[in2]"r"(7)); // start profiling
-
+    // compute motion by comparing current Sobel edges with previous ones
     for (int i = 0; i < totalPixels; i++) {
-        if (sobelCurr[i] != 0 && sobelPrev[i] == 0)
+        if (sobelCurr[i] != 0 && sobelPrev[i] == 0) // if current edge but previous no edge, mark as motion (red)
             motionDraw[i] = swap_u16(0xF800);
-        else if (sobelCurr[i] != 0)
+        else if (sobelCurr[i] != 0) // if edge in both frames, mark as white 
             motionDraw[i] = swap_u16(0xFFFF);
-        else
+        else // else mark as black
             motionDraw[i] = 0x0000;
     }
 
-    // Swap sobel pointers: this frame's edges become "previous" for next frame.
+    // we swap the Sobel buffers 
     volatile uint8_t *temp = sobelPrev;
     sobelPrev = sobelCurr;
     sobelCurr = temp;
 
-    // Swap motion pointers: the buffer we just wrote becomes the display buffer.
+    // we swap the motion pointers
     volatile uint16_t *tempM = motionDisplay;
     motionDisplay = motionDraw;
     motionDraw    = tempM;
 
-    asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(1<<8|7<<4));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(1),[in2]"r"(1<<9));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(2),[in2]"r"(1<<10));
+    // stop profiling and print results for Motion
+    asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(PROF_STOP_READ_CYCLES));
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(PROF_SEL_STALL),[in2]"r"(PROF_STALL_RESET));
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(PROF_SEL_IDLE),[in2]"r"(PROF_IDLE_RESET));
     printf("nrOfCycles for Motion: %d %d %d\n", cycles, stall, idle);
 
-    // Wait for captureNext to be fully written before we process it.
+    // Wait for captureNext to be fully written before we process it
     waitForNextImage();
 
-    // Swap capture buffers: captureNext is now ready, captureReady is free.
+    // Swap capture buffers
     volatile uint8_t *tempC = captureReady;
     captureReady = captureNext;
     captureNext  = tempC;
