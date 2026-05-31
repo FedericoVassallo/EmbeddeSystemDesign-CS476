@@ -244,12 +244,12 @@ always @(posedge clock) begin
                 byteEnablesOut      <= 4'hF;
                 if (doingWrite) begin
                     burstSizeOut   <= writeChunkWords - 8'd1;
-                    addrDataOutReg <= writeAddrReg;
+                    addrDataOutReg <= {writeAddrReg[31:2], 2'b00};
                     writeCount     <= {1'b0, writeChunkWords} - 9'd1;
                     state          <= WRITE_BURST;
                 end else begin
                     burstSizeOut   <= loadChunkWords - 8'd1;
-                    addrDataOutReg <= loadAddrReg;
+                    addrDataOutReg <= {loadAddrReg[31:2], 2'b00};
                     state          <= LOAD_BURST;
                 end
             end

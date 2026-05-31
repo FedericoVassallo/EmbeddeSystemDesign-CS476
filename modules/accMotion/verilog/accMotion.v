@@ -171,11 +171,11 @@ always @(posedge clock) begin
                 byteEnablesOut      <= 4'hF; // all byte enabled
                 burstSizeOut        <= (doingWrite ? writeBurstSize : loadBurstSize) - 8'd1;
                 if (doingWrite) begin
-                    addrDataOutReg <= writeAddrReg;
+                    addrDataOutReg <= {writeAddrReg[31:2], 2'b00};
                     writeCount     <= {1'b0, writeBurstSize} - 9'd1;
                     state          <= WRITE_BURST;
                 end else begin
-                    addrDataOutReg <= loadingSrcB ? loadBAddrReg : loadAAddrReg; // we put the correct addr depending on if we are loading srcA or srcB
+                    addrDataOutReg <= loadingSrcB ? {loadBAddrReg[31:2], 2'b00} : {loadAAddrReg[31:2], 2'b00}; // we put the correct aligned addr depending on if we are loading srcA or srcB
                     state          <= LOAD_BURST;
                 end
             end
