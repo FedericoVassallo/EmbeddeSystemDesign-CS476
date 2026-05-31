@@ -40,7 +40,6 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
    *     6        Start/stop image aquisition (ciValueb[1..0] = "01")
    *     6        Take single image (ciValueb[1..0] = "10")
    *     7        Read (self clearing): Single image grabbing done.
-   *     8        Read frame counter, increments on every detected new image.
    *
    */
   function integer clog2;
@@ -158,7 +157,7 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
    * here the ci interface is defined
    *
    */
-  reg [31:0] s_selectedResult, s_frameCounterReg;
+  reg [31:0] s_selectedResult;
   
   assign ciDone   = s_isMyCi;
   assign ciResult = (s_isMyCi == 1'b0) ? 32'd0 : s_selectedResult;
@@ -172,7 +171,6 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
       4'd3    : s_selectedResult <= {24'd0,s_fpsCountValueReg}; // video frame rate
       4'd4    : s_selectedResult <= s_frameBufferBaseReg; // base address of where the camera is writing
       4'd7    : s_selectedResult <= {31'd0,s_singleShotDoneReg}; // if a single shot has been taken and is done
-      4'd8    : s_selectedResult <= s_frameCounterReg; // the absolute total number of frames captured since the system was turned on
       default : s_selectedResult <= 32'd0;
     endcase
 
@@ -264,8 +262,7 @@ module camera #(parameter [7:0] customInstructionId = 8'd0,
   always @(posedge clock)
     begin
       s_busAddressReg        <= s_busAddressNext;
-      s_frameCounterReg      <= (reset == 1'b1) ? 32'd0 : (s_newScreen == 1'b1) ? s_frameCounterReg + 32'd1 : s_frameCounterReg; // If a brand-new frame is starting right now (s_newScreen == 1'b1), it adds 1 to the total count of frames captured
-      s_grabberRunningReg    <= (reset == 1'b1) ? 1'b0 : (s_newScreen == 1'b1) ? s_grabberActiveReg : s_grabberRunningReg; // copies the on/off of the grabbing but only if we are at the start of a new frame to not capture half broken frame 
+      s_grabberRunningReg    <= (reset == 1'b1) ? 1'b0 : (s_newScreen == 1'b1) ? s_grabberActiveReg : s_grabberRunningReg; // copies the on/off of the grabbing but only if we are at the start of a new frame to not capture half broken frame
       s_singleShotActionReg  <= (reset == 1'b1 || s_singleShotActionReg[1] == 1'b1) ? 2'b0 : 
                                 (s_newScreen == 1'b1) ? {s_singleShotActionReg[0],s_grabberSingleShotReg} : s_singleShotActionReg;
       s_singleShotDoneReg    <= (reset == 1'b1 || (s_isMyCi == 1'b1 && ciValueA[2:0] == 3'd6 && ciValueB[1] == 1'b1 && ciValueB[0] == 1'b0)) ? 1'b0 : 
