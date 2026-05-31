@@ -145,7 +145,7 @@ int main () {
     asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(PROF_STOP_READ_CYCLES));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(PROF_SEL_STALL),[in2]"r"(PROF_STALL_RESET));
     asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(PROF_SEL_IDLE),[in2]"r"(PROF_IDLE_RESET));
-    printf("nrOfCycles for Sobel: %d %d %d\n", cycles, stall, idle);
+    printf("nrOfCycles for Frame: %d %d %d\n", cycles, stall, idle);
 
     // we swap capture buffers so captureNext is now ready, captureReady is free
     volatile uint8_t *tempC = captureReady;

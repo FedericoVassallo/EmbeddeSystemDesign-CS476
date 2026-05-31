@@ -6,7 +6,7 @@
 //   4  read back source address
 //   5  read back dest address
 //
-// Per row: prefill 3 line buffers → compute Sobel row → write result.
+// Per row: prefill 3 line buffers -> compute Sobel row -> write result.
 
 module accSobel #(
     parameter [7:0]   customId   = 8'h0E,
