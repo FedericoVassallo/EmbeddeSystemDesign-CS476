@@ -51,6 +51,13 @@ localparam integer COL_BITS  = 10; // up to 1024 columns
 localparam integer ROW_BITS  = 9;  // up to 512 rows
 localparam integer WORD_BITS = 8;  // up to 256 words per row
 
+// pipeline latency of the COMPUTE read path:
+//  1 cycle  registered read
+//  2 cycles horizontal sliding window (centre is 1 behind the newest column)
+//  2 cycles Sobel output shift register for the noise filter
+// so the noise filtered result for column c is written when compCol == c + 5
+localparam integer COMPUTE_LATENCY = 5;
+
 localparam [3:0]
     IDLE          = 4'd0,
     INIT          = 4'd1,
@@ -118,37 +125,36 @@ reg        dataValidOutReg;
 assign addressDataOut = addrDataOutReg;
 assign dataValidOut   = dataValidOutReg;
 
-// pixel registers for the 3×3 Sobel neighbourhood (p5 is always 0 so not needed)
-reg [7:0] p1, p2, p3, p4, p6, p7, p8, p9;
+// this is just for safety of the read addrwss so we never index past the end of a row while the pipeline drains 
+wire [COL_BITS-1:0] s_readCol = (compCol < IMG_WIDTH) ? compCol : (IMG_WIDTH - 1); // we force if the column index goes past the end of the row
 
-// noise filter reg
-reg [7:0] p_left, p_center;
+// registered single-port reads of the three line buffers (1-cycle latency)
+reg [7:0] rdBuf0, rdBuf1, rdBuf2;
 
+// route the registered buffer outputs to the top/middle/bottom rows according
+// to the current rotation of the index pointers
+reg [7:0] rowTop, rowMid, rowBot;
 always @(*) begin
-    // select the correct pixels from the rotating line buffers based on current index pointers
-    // border neighbours are forced to black so the line-buffer addresses stay in range
-    case (topIdx)
-        2'd0: begin p1 = (compCol == 0) ? 8'h00 : lineBuf0[compCol - 1]; p2 = lineBuf0[compCol]; p3 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf0[compCol + 1]; end
-        2'd1: begin p1 = (compCol == 0) ? 8'h00 : lineBuf1[compCol - 1]; p2 = lineBuf1[compCol]; p3 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf1[compCol + 1]; end
-        default: begin p1 = (compCol == 0) ? 8'h00 : lineBuf2[compCol - 1]; p2 = lineBuf2[compCol]; p3 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf2[compCol + 1]; end
-    endcase
-    case (midIdx)
-        2'd0: begin p4 = (compCol == 0) ? 8'h00 : lineBuf0[compCol - 1]; p6 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf0[compCol + 1]; end
-        2'd1: begin p4 = (compCol == 0) ? 8'h00 : lineBuf1[compCol - 1]; p6 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf1[compCol + 1]; end
-        default: begin p4 = (compCol == 0) ? 8'h00 : lineBuf2[compCol - 1]; p6 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf2[compCol + 1]; end
-    endcase
-    case (botIdx)
-        2'd0: begin p7 = (compCol == 0) ? 8'h00 : lineBuf0[compCol - 1]; p8 = lineBuf0[compCol]; p9 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf0[compCol + 1]; end
-        2'd1: begin p7 = (compCol == 0) ? 8'h00 : lineBuf1[compCol - 1]; p8 = lineBuf1[compCol]; p9 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf1[compCol + 1]; end
-        default: begin p7 = (compCol == 0) ? 8'h00 : lineBuf2[compCol - 1]; p8 = lineBuf2[compCol]; p9 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf2[compCol + 1]; end
-    endcase
+    case (topIdx) 2'd0: rowTop = rdBuf0; 2'd1: rowTop = rdBuf1; default: rowTop = rdBuf2; endcase
+    case (midIdx) 2'd0: rowMid = rdBuf0; 2'd1: rowMid = rdBuf1; default: rowMid = rdBuf2; endcase
+    case (botIdx) 2'd0: rowBot = rdBuf0; 2'd1: rowBot = rdBuf1; default: rowBot = rdBuf2; endcase
 end
+
+// horizontal sliding window per row: L=left col, C=centre col, R=right col
+reg [7:0] winTopL, winTopC, winTopR;
+reg [7:0] winMidL, winMidC, winMidR;
+reg [7:0] winBotL, winBotC, winBotR;
+
+// we assing the p1 to p9 that will be packed and sent in the sobelCi 
+wire [7:0] p1 = winTopL, p2 = winTopC, p3 = winTopR;
+wire [7:0] p4 = winMidL,                p6 = winMidR;
+wire [7:0] p7 = winBotL, p8 = winBotC, p9 = winBotR;
 
 wire [31:0] s_sobelValueA = {p4, p3, p2, p1}; // pack the 4 pixels into a 32-bit word for sobelCi
 wire [31:0] s_sobelValueB = {p9, p8, p7, p6};
 wire [31:0] s_sobelResult;
 
-// inner sobelCi always running combinationally, driven by the current compCol pixels
+// inner sobelCi runs combinationally
 sobelCi #(.customId(8'h00)) sobelInner (
     .start(1'b1),
     .clock(clock),
@@ -163,6 +169,13 @@ sobelCi #(.customId(8'h00)) sobelInner (
 );
 
 wire [7:0] sobelPixel = s_sobelResult[7:0]; // only the last byte carries the pixel value
+
+// 3 shift register over the Sobel output stream, for the noise filter
+// sob0 is the newest (right neighbour), sob1 is the centre column, sob2 =is the left neighbour
+reg [7:0] sob0, sob1, sob2;
+
+// column whose noise-filtered result is written this cycle (valid once primed)
+wire [COL_BITS-1:0] s_prodCol = compCol - COMPUTE_LATENCY[COL_BITS-1:0];
 
 // pack 4 output bytes into one 32-bit word to send in a write burst
 // {writeWordIdx, 2'bXX} is equivalent to writeWordIdx*4 + byte_offset
@@ -191,8 +204,11 @@ always @(posedge clock) begin
         writeAddrReg  <= 32'd0;
         doingWrite    <= 1'b0;
         prefillDone   <= 1'b0;
-        p_left        <= 8'd0;
-        p_center      <= 8'd0;
+        rdBuf0 <= 8'd0; rdBuf1 <= 8'd0; rdBuf2 <= 8'd0;
+        winTopL <= 8'd0; winTopC <= 8'd0; winTopR <= 8'd0;
+        winMidL <= 8'd0; winMidC <= 8'd0; winMidR <= 8'd0;
+        winBotL <= 8'd0; winBotC <= 8'd0; winBotR <= 8'd0;
+        sob0 <= 8'd0; sob1 <= 8'd0; sob2 <= 8'd0;
         beginTransactionOut <= 1'b0;
         readNotWriteOut     <= 1'b0;
         endTransactionOut   <= 1'b0;
@@ -209,6 +225,12 @@ always @(posedge clock) begin
         burstSizeOut        <= 8'd0;
         addrDataOutReg      <= 32'd0;
         dataValidOutReg     <= 1'b0;
+
+        // synchronous block-RAM reads of the three line buffers (registered,
+        // 1-cycle latency); only the COMPUTE pipeline consumes the result
+        rdBuf0 <= lineBuf0[s_readCol];
+        rdBuf1 <= lineBuf1[s_readCol];
+        rdBuf2 <= lineBuf2[s_readCol];
 
         if (isMyCi && (valueA == 32'd1)) sourceAddressReg      <= valueB;
         if (isMyCi && (valueA == 32'd2)) destinationAddressReg <= valueB;
@@ -295,6 +317,12 @@ always @(posedge clock) begin
                             end else begin
                                 prefillDone <= 1'b1; // all 3 line buffers are now ready
                                 compCol     <= {COL_BITS{1'b0}};
+                                // clear the sliding window / output pipeline so the
+                                // new row does not inherit the previous row's pixels
+                                winTopL <= 8'd0; winTopC <= 8'd0; winTopR <= 8'd0;
+                                winMidL <= 8'd0; winMidC <= 8'd0; winMidR <= 8'd0;
+                                winBotL <= 8'd0; winBotC <= 8'd0; winBotR <= 8'd0;
+                                sob0 <= 8'd0; sob1 <= 8'd0; sob2 <= 8'd0;
                                 state       <= COMPUTE;
                             end
                         end
@@ -303,25 +331,31 @@ always @(posedge clock) begin
             end
 
             COMPUTE: begin
-                // one column per cycle: shift the pipeline and write the noise-filtered result one cycle late
-                if (compCol == 0) begin
-                    p_left <= 8'h00; // no left neighbour at column 0
-                end else begin
-                    p_left <= p_center;
-                end
-                p_center <= sobelPixel;
+                // one column per cycle. The read/window/Sobel pipeline is
+                // COMPUTE_LATENCY columns deep, so while compCol scans the read
+                // address the noise-filtered output for column s_prodCol is
+                // written this cycle.
 
-                if (compCol > 0) begin
-                    // if center is white but both neighbours are black it is isolated noise, remove it
-                    if (p_center == 8'hFF && p_left == 8'h00 && sobelPixel == 8'h00) begin
-                        outBuf[compCol - 1] <= 8'h00;
+                // shift the horizontal window by one column (registered data)
+                winTopR <= rowTop; winTopC <= winTopR; winTopL <= winTopC;
+                winMidR <= rowMid; winMidC <= winMidR; winMidL <= winMidC;
+                winBotR <= rowBot; winBotC <= winBotR; winBotL <= winBotC;
+
+                // shift the Sobel-output stream for the 3-tap noise filter
+                sob0 <= sobelPixel; sob1 <= sob0; sob2 <= sob1;
+
+                // write the result for the produced column once the pipeline is primed
+                if (compCol >= COMPUTE_LATENCY) begin
+                    if (s_prodCol == 0 || s_prodCol == (IMG_WIDTH - 1)) begin
+                        outBuf[s_prodCol] <= 8'h00; // left/right border columns forced black
+                    end else if (sob1 == 8'hFF && sob2 == 8'h00 && sob0 == 8'h00) begin
+                        outBuf[s_prodCol] <= 8'h00; // isolated white pixel -> noise, remove it
                     end else begin
-                        outBuf[compCol - 1] <= (compCol - 1 == 0) ? 8'h00 : p_center; // left border forced black
+                        outBuf[s_prodCol] <= sob1;  // edge value (centre of the 3-tap)
                     end
                 end
 
-                if (compCol == (IMG_WIDTH - 1)) begin
-                    outBuf[IMG_WIDTH - 1] <= 8'h00; // right border forced black
+                if (compCol == ((IMG_WIDTH - 1) + COMPUTE_LATENCY)) begin
                     compCol      <= {COL_BITS{1'b0}};
                     writeWordIdx <= {WORD_BITS{1'b0}};
                     doingWrite   <= 1'b1; // switch to write phase
