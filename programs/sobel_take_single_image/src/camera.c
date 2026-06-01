@@ -118,6 +118,13 @@ int main () {
         acc_status = sobel_acc_ci(SOBEL_ACC_REG_STATUS, 0);
     } while ((acc_status & SOBEL_ACC_STATUS_BUSY) != 0); // we do polling until the accelerator is done
 
+    // stop profiling and print results
+    asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(PROF_STOP_READ_CYCLES));
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(PROF_SEL_STALL),[in2]"r"(PROF_STALL_RESET));
+    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(PROF_SEL_IDLE),[in2]"r"(PROF_IDLE_RESET));
+    printf("nrOfCycles for Frame: %d %d %d\n", cycles, stall, idle);
+
+
     // we start the hardware motion accelerator to compare this frame's edges with the previous frame's edges and write the result into motionDraw
     motion_acc_ci(MOTION_ACC_REG_SRCA, (uint32_t)sobelCurr);
     motion_acc_ci(MOTION_ACC_REG_SRCB, (uint32_t)sobelPrev);
@@ -141,12 +148,7 @@ int main () {
     // we wait for captureNext to be fully written before we process it
     waitForNextImage();
 
-    // stop profiling and print results
-    asm volatile ("l.nios_rrr %[out1],r0,%[in2],0xB":[out1]"=r"(cycles):[in2]"r"(PROF_STOP_READ_CYCLES));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(stall):[in1]"r"(PROF_SEL_STALL),[in2]"r"(PROF_STALL_RESET));
-    asm volatile ("l.nios_rrr %[out1],%[in1],%[in2],0xB":[out1]"=r"(idle):[in1]"r"(PROF_SEL_IDLE),[in2]"r"(PROF_IDLE_RESET));
-    printf("nrOfCycles for Frame: %d %d %d\n", cycles, stall, idle);
-
+    
     // we swap capture buffers so captureNext is now ready, captureReady is free
     volatile uint8_t *tempC = captureReady;
     captureReady = captureNext;
