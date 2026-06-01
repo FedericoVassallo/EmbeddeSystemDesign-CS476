@@ -120,6 +120,10 @@ assign dataValidOut   = dataValidOutReg;
 
 // pixel registers for the 3×3 Sobel neighbourhood (p5 is always 0 so not needed)
 reg [7:0] p1, p2, p3, p4, p6, p7, p8, p9;
+reg [7:0] p1_next, p2_next, p3_next, p4_next, p6_next, p7_next, p8_next, p9_next;
+reg [COL_BITS-1:0] sobelCol;
+reg                 sobelValid;
+reg                 computeFlush;
 
 // noise filter reg
 reg [7:0] p_left, p_center;
@@ -128,19 +132,19 @@ always @(*) begin
     // select the correct pixels from the rotating line buffers based on current index pointers
     // border neighbours are forced to black so the line-buffer addresses stay in range
     case (topIdx)
-        2'd0: begin p1 = (compCol == 0) ? 8'h00 : lineBuf0[compCol - 1]; p2 = lineBuf0[compCol]; p3 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf0[compCol + 1]; end
-        2'd1: begin p1 = (compCol == 0) ? 8'h00 : lineBuf1[compCol - 1]; p2 = lineBuf1[compCol]; p3 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf1[compCol + 1]; end
-        default: begin p1 = (compCol == 0) ? 8'h00 : lineBuf2[compCol - 1]; p2 = lineBuf2[compCol]; p3 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf2[compCol + 1]; end
+        2'd0: begin p1_next = (compCol == 0) ? 8'h00 : lineBuf0[compCol - 1]; p2_next = lineBuf0[compCol]; p3_next = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf0[compCol + 1]; end
+        2'd1: begin p1_next = (compCol == 0) ? 8'h00 : lineBuf1[compCol - 1]; p2_next = lineBuf1[compCol]; p3_next = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf1[compCol + 1]; end
+        default: begin p1_next = (compCol == 0) ? 8'h00 : lineBuf2[compCol - 1]; p2_next = lineBuf2[compCol]; p3_next = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf2[compCol + 1]; end
     endcase
     case (midIdx)
-        2'd0: begin p4 = (compCol == 0) ? 8'h00 : lineBuf0[compCol - 1]; p6 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf0[compCol + 1]; end
-        2'd1: begin p4 = (compCol == 0) ? 8'h00 : lineBuf1[compCol - 1]; p6 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf1[compCol + 1]; end
-        default: begin p4 = (compCol == 0) ? 8'h00 : lineBuf2[compCol - 1]; p6 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf2[compCol + 1]; end
+        2'd0: begin p4_next = (compCol == 0) ? 8'h00 : lineBuf0[compCol - 1]; p6_next = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf0[compCol + 1]; end
+        2'd1: begin p4_next = (compCol == 0) ? 8'h00 : lineBuf1[compCol - 1]; p6_next = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf1[compCol + 1]; end
+        default: begin p4_next = (compCol == 0) ? 8'h00 : lineBuf2[compCol - 1]; p6_next = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf2[compCol + 1]; end
     endcase
     case (botIdx)
-        2'd0: begin p7 = (compCol == 0) ? 8'h00 : lineBuf0[compCol - 1]; p8 = lineBuf0[compCol]; p9 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf0[compCol + 1]; end
-        2'd1: begin p7 = (compCol == 0) ? 8'h00 : lineBuf1[compCol - 1]; p8 = lineBuf1[compCol]; p9 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf1[compCol + 1]; end
-        default: begin p7 = (compCol == 0) ? 8'h00 : lineBuf2[compCol - 1]; p8 = lineBuf2[compCol]; p9 = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf2[compCol + 1]; end
+        2'd0: begin p7_next = (compCol == 0) ? 8'h00 : lineBuf0[compCol - 1]; p8_next = lineBuf0[compCol]; p9_next = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf0[compCol + 1]; end
+        2'd1: begin p7_next = (compCol == 0) ? 8'h00 : lineBuf1[compCol - 1]; p8_next = lineBuf1[compCol]; p9_next = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf1[compCol + 1]; end
+        default: begin p7_next = (compCol == 0) ? 8'h00 : lineBuf2[compCol - 1]; p8_next = lineBuf2[compCol]; p9_next = (compCol == IMG_WIDTH - 1) ? 8'h00 : lineBuf2[compCol + 1]; end
     endcase
 end
 
@@ -191,6 +195,11 @@ always @(posedge clock) begin
         writeAddrReg  <= 32'd0;
         doingWrite    <= 1'b0;
         prefillDone   <= 1'b0;
+        p1 <= 8'd0; p2 <= 8'd0; p3 <= 8'd0; p4 <= 8'd0;
+        p6 <= 8'd0; p7 <= 8'd0; p8 <= 8'd0; p9 <= 8'd0;
+        sobelCol     <= {COL_BITS{1'b0}};
+        sobelValid   <= 1'b0;
+        computeFlush <= 1'b0;
         p_left        <= 8'd0;
         p_center      <= 8'd0;
         beginTransactionOut <= 1'b0;
@@ -294,8 +303,13 @@ always @(posedge clock) begin
                                 state      <= REQ;
                             end else begin
                                 prefillDone <= 1'b1; // all 3 line buffers are now ready
-                                compCol     <= {COL_BITS{1'b0}};
-                                state       <= COMPUTE;
+                                compCol      <= {COL_BITS{1'b0}};
+                                sobelCol     <= {COL_BITS{1'b0}};
+                                sobelValid   <= 1'b0;
+                                computeFlush <= 1'b0;
+                                p_left       <= 8'h00;
+                                p_center     <= 8'h00;
+                                state        <= COMPUTE;
                             end
                         end
                     end
@@ -303,29 +317,45 @@ always @(posedge clock) begin
             end
 
             COMPUTE: begin
-                // one column per cycle: shift the pipeline and write the noise-filtered result one cycle late
-                if (compCol == 0) begin
-                    p_left <= 8'h00; // no left neighbour at column 0
+                // Capture the async LUT RAM outputs before they feed the Sobel math.
+                // sobelPixel belongs to sobelCol, which is one COMPUTE cycle behind compCol.
+                if (!computeFlush) begin
+                    p1 <= p1_next; p2 <= p2_next; p3 <= p3_next; p4 <= p4_next;
+                    p6 <= p6_next; p7 <= p7_next; p8 <= p8_next; p9 <= p9_next;
+                    sobelCol   <= compCol;
+                    sobelValid <= 1'b1;
                 end else begin
-                    p_left <= p_center;
+                    sobelValid <= 1'b0;
                 end
-                p_center <= sobelPixel;
 
-                if (compCol > 0) begin
-                    // if center is white but both neighbours are black it is isolated noise, remove it
-                    if (p_center == 8'hFF && p_left == 8'h00 && sobelPixel == 8'h00) begin
-                        outBuf[compCol - 1] <= 8'h00;
+                if (sobelValid) begin
+                    if (sobelCol == 0) begin
+                        p_left <= 8'h00; // no left neighbour at column 0
                     end else begin
-                        outBuf[compCol - 1] <= (compCol - 1 == 0) ? 8'h00 : p_center; // left border forced black
+                        p_left <= p_center;
+                    end
+                    p_center <= sobelPixel;
+
+                    if (sobelCol > 0) begin
+                        // if center is white but both neighbours are black it is isolated noise, remove it
+                        if (p_center == 8'hFF && p_left == 8'h00 && sobelPixel == 8'h00) begin
+                            outBuf[sobelCol - 1] <= 8'h00;
+                        end else begin
+                            outBuf[sobelCol - 1] <= (sobelCol - 1 == 0) ? 8'h00 : p_center; // left border forced black
+                        end
                     end
                 end
 
-                if (compCol == (IMG_WIDTH - 1)) begin
+                if (computeFlush) begin
                     outBuf[IMG_WIDTH - 1] <= 8'h00; // right border forced black
                     compCol      <= {COL_BITS{1'b0}};
+                    sobelCol     <= {COL_BITS{1'b0}};
+                    computeFlush <= 1'b0;
                     writeWordIdx <= {WORD_BITS{1'b0}};
                     doingWrite   <= 1'b1; // switch to write phase
                     state        <= REQ;
+                end else if (compCol == (IMG_WIDTH - 1)) begin
+                    computeFlush <= 1'b1; // next cycle writes the delayed final Sobel result
                 end else begin
                     compCol <= compCol + 1;
                 end
