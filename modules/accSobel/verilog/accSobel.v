@@ -174,7 +174,7 @@ wire [7:0] sobelPixel = s_sobelResult[7:0]; // only the last byte carries the pi
 // sob0 is the newest (right neighbour), sob1 is the centre column, sob2 =is the left neighbour
 reg [7:0] sob0, sob1, sob2;
 
-// column whose noise-filtered result is written this cycle (valid once primed)
+// the column for which the current output is being produced is the compute column minus the pipeline latency
 wire [COL_BITS-1:0] s_prodCol = compCol - COMPUTE_LATENCY[COL_BITS-1:0];
 
 // pack 4 output bytes into one 32-bit word to send in a write burst
@@ -217,7 +217,7 @@ always @(posedge clock) begin
         addrDataOutReg      <= 32'd0;
         dataValidOutReg     <= 1'b0;
     end else begin
-        // default these to 0 every cycle; states that need them set them to 1 explicitly
+        // these are default to 0 every cycle, states that need them set them to 1 explicitly
         beginTransactionOut <= 1'b0;
         readNotWriteOut     <= 1'b0;
         endTransactionOut   <= 1'b0;
@@ -226,8 +226,7 @@ always @(posedge clock) begin
         addrDataOutReg      <= 32'd0;
         dataValidOutReg     <= 1'b0;
 
-        // synchronous block-RAM reads of the three line buffers (registered,
-        // 1-cycle latency); only the COMPUTE pipeline consumes the result
+        // reads of the three line buffers 
         rdBuf0 <= lineBuf0[s_readCol];
         rdBuf1 <= lineBuf1[s_readCol];
         rdBuf2 <= lineBuf2[s_readCol];
@@ -331,27 +330,22 @@ always @(posedge clock) begin
             end
 
             COMPUTE: begin
-                // one column per cycle. The read/window/Sobel pipeline is
-                // COMPUTE_LATENCY columns deep, so while compCol scans the read
-                // address the noise-filtered output for column s_prodCol is
-                // written this cycle.
-
                 // shift the horizontal window by one column (registered data)
                 winTopR <= rowTop; winTopC <= winTopR; winTopL <= winTopC;
                 winMidR <= rowMid; winMidC <= winMidR; winMidL <= winMidC;
                 winBotR <= rowBot; winBotC <= winBotR; winBotL <= winBotC;
 
-                // shift the Sobel-output stream for the 3-tap noise filter
+                // shift the Sobel output stream for the noise filter
                 sob0 <= sobelPixel; sob1 <= sob0; sob2 <= sob1;
 
-                // write the result for the produced column once the pipeline is primed
+                // write the result for the produced column once the pipeline is filled
                 if (compCol >= COMPUTE_LATENCY) begin
                     if (s_prodCol == 0 || s_prodCol == (IMG_WIDTH - 1)) begin
                         outBuf[s_prodCol] <= 8'h00; // left/right border columns forced black
                     end else if (sob1 == 8'hFF && sob2 == 8'h00 && sob0 == 8'h00) begin
-                        outBuf[s_prodCol] <= 8'h00; // isolated white pixel -> noise, remove it
+                        outBuf[s_prodCol] <= 8'h00; // isolated white pixel so it is noise, remove it
                     end else begin
-                        outBuf[s_prodCol] <= sob1;  // edge value (centre of the 3-tap)
+                        outBuf[s_prodCol] <= sob1;  // edge value
                     end
                 end
 
